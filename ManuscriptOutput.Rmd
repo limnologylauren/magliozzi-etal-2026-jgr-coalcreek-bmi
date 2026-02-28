@@ -1,0 +1,3245 @@
+---
+title: "ManuscriptOutput"
+output: html_document
+date: "2026-02-28"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = F, message = F)
+library(tidyverse)
+library(vegan)
+library(stats)
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(factoextra)
+library(multcompView)
+library(NADA)
+library(scales)
+library(cowplot)
+library(randomForest)
+library(scales)
+library(ggnewscale)
+options(ggrepel.max.overlaps=Inf)
+```
+
+```{r functions and constants}
+bugSites = c("Greenbelt Plateau",
+             "Superior Associates",
+             "Highway 36",
+             "CTC Open Space")
+
+'%!in%' <- function(x,y)!('%in%'(x,y))
+
+dateFormat = "%b"
+
+dateX = scale_x_date(date_labels = dateFormat,
+                     date_breaks = '1 month')
+
+month_one = scale_x_date(date_labels = dateFormat,
+                         date_breaks = '1 month')
+
+month_two = scale_x_date(date_labels = dateFormat,
+                         date_breaks = '2 month')
+
+month_three = scale_x_date(date_labels = dateFormat,
+                         date_breaks = '3 month')
+
+lm_eqn <- function(df){
+    m <- lm(y ~ x, df);
+    pv = with(summary(m), pf(fstatistic[1],fstatistic[2],fstatistic[3],lower.tail=F));
+    eq <- substitute(italic(y) == a + b %.% italic(x)*
+                       ","~~italic(r)^2~"="~r2,
+                       #","~~italic(p)*"="~pvn, 
+         list(a = format(unname(coef(m)[1]), digits = 2),
+              b = format(unname(coef(m)[2]), digits = 2),
+             r2 = format(summary(m)$r.squared, digits = 3)))#,
+            # pvn = format(unname(pv),digits = 3)))
+#             pv = formatC(pv,format="e",digits=1)))
+    as.character(as.expression(eq));
+}
+
+lm_eqn2 <- function(df){
+    m <- lm(y ~ x, df);
+    pv = with(summary(m), pf(fstatistic[1],fstatistic[2],fstatistic[3],lower.tail=F));
+    eq <- substitute(italic(p)*"="~pvn, 
+         list(#a = format(unname(coef(m)[1]), digits = 2),
+              #b = format(unname(coef(m)[2]), digits = 2),
+             #r2 = format(summary(m)$r.squared, digits = 3),
+             pvn = format(unname(pv),digits = 3)))
+#             pv = formatC(pv,format="e",digits=1)))
+    as.character(as.expression(eq));
+}
+
+cbLookup_message <- c("Greenbelt Plateau" = "#999999",
+              "Superior Associates" = "#479f74",
+              "Highway 36" ="#56b4e9",
+              "Dutch Creek" ="#f0e34b",
+              "CTC Open Space"= "#3172b2",
+              "Mulberry" = "#000000")
+cbLookup = cbLookup_message
+
+cbLookupBug = cbLookup[c(1,2,3,5)]
+shapesBug = c(15, 16, 17, 18)
+shapes = c(15, 16, 17, 25, 18, 16)
+
+shapeLookup = c("Greenbelt Plateau" = 19,
+              "Superior Associates" = 15,
+              "Highway 36" = 24,
+              "Dutch Creek" = 23,
+              "CTC Open Space"= 25,
+              "Mulberry" = 19)
+
+shapeLookupPartic = c("Greenbelt Plateau" = 19,
+              "Superior Associates" = 15,
+              "Highway 36" = 24,
+              "Dutch Creek Park" = 23,
+              "CTC Open Space"= 25,
+              "Mulberry" = 19)
+
+tri.to.squ<-function(x)
+{
+  rn<-row.names(x)
+  cn<-colnames(x)
+  an<-unique(c(cn,rn))
+  myval<-x[!is.na(x)]
+  mymat<-matrix(1,nrow=length(an),ncol=length(an),dimnames=list(an,an))
+  for(ext in 1:length(cn))
+  {
+    for(int in 1:length(rn))
+    {
+      if(is.na(x[row.names(x)==rn[int],colnames(x)==cn[ext]])) next
+      mymat[row.names(mymat)==rn[int],colnames(mymat)==cn[ext]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+      mymat[row.names(mymat)==cn[ext],colnames(mymat)==rn[int]]<-x[row.names(x)==rn[int],colnames(x)==cn[ext]]
+    }
+    
+  }
+  return(mymat)
+}
+
+wilcox_tibble = function(dataIn = data_all,
+                         var = c('')){
+  dat = dataIn %>%
+    select(Site,all_of(var))
+  
+  wilcox_result = pairwise.wilcox.test(dat %>% pull(var),
+                                         dat %>% pull(Site),
+                                         p.adjust.method = 'none')
+    
+    # Check that there was enough data to run a wilcox test. If the pvalue 
+    # matrix has 0 rows, then set 'pValue' to False so the labels get set 
+    # correctly later.
+    if(nrow(wilcox_result$p.value) == 0){
+      return(0)
+    } else {
+      # Use a  function to turn the triangle matrix into a square matrix 
+      wilcox_matr = tri.to.squ(wilcox_result$p.value)
+      
+      # Use a function to turn the matrix of p-values into a list of letters 
+      # for each site.Each site is given a letter based on the p-value 
+      # relationships with each other site. If a p-value between sites
+      # is less than or equal to 0.05, they will be marked as
+      # different groups.
+      let = multcompLetters(wilcox_matr,
+                            compare="<=",
+                            threshold = 0.05,
+                            Letters = letters)
+    }
+  output = tibble(Sites = names(let$Letters),
+                  Letters = let$Letters,
+                  Variable = var) %>%
+    pivot_wider(names_from = Sites,
+                values_from = Letters)
+  
+  datN = dat %>% group_by(Site) %>% summarise(n=n()) %>%
+    pivot_wider(names_from = 'Site', values_from = n) 
+  
+  names(datN) = paste0(names(datN),"_n")
+  
+  output = bind_cols(output,datN)
+  
+  return(output)
+}
+
+txtSize = 26
+pltSize = 26
+numSize = 20
+
+bottomL = theme(text=element_text(size=pltSize),
+      legend.position='bottom',
+      panel.grid.major.y=element_line(color='grey'),
+      panel.grid.minor=element_blank(),
+      panel.background = element_blank(),
+      axis.line=element_line(colour='black'),
+      axis.text=element_text(size=numSize),
+      legend.key=element_blank())
+
+blankTheme = theme(text=element_text(size=pltSize),
+      panel.grid.major.y=element_line(color='grey'),
+      panel.grid.minor=element_blank(),
+      panel.background = element_blank(),
+      axis.text=element_text(size=numSize),
+      axis.line=element_line(colour='black'),
+      legend.key=element_blank())
+
+bottomSlant = bottomL +
+  #theme(axis.text.x = element_text(angle=45,hjust=0.5,vjust=0.5))
+  theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+
+siteOrder = c("Greenbelt Plateau","Superior Associates",
+              "Highway 36","Dutch Creek Park",
+              "CTC Open Space", "Mulberry")
+
+make_overtime_censored = function(data,analyte,cenCol,xR,txtSize=24,al=.5){
+  if(al != 1){
+    lt = 1
+  } else {
+    lt = 2
+  }
+
+  metHere = analyte#setdiff(metNames,setdiff(metNames,names(data)))
+  cenHere = cenCol#paste0(metHere,"Cen")
+
+  data = data %>%
+    filter(!is.na(get(metHere)))
+    
+  vals = data %>%
+    select(Date, Site, all_of(metHere)) %>%
+    pivot_longer(cols = -c(Date,Site),
+                 names_to = "Variable",
+                 values_to = "Value")
+  
+  maxV = data %>%
+    pull(all_of(metHere)) %>%
+    max()
+  
+  maxY = maxV * 1.2
+
+  cenVals = data %>%
+    select(Date, Site, all_of(cenHere)) %>%
+    pivot_longer(cols = -c(Date,Site),
+                 names_to = "Variable",
+                 values_to = "ValueCen") %>%
+    mutate(
+      ValueCen = case_when(
+        ValueCen == "0" ~ F,
+        T ~ T),
+      Variable = sub("Cen","",Variable))
+  
+  
+  longCen = vals %>%
+    full_join(cenVals, by = c("Date","Site","Variable")) %>%
+    mutate(Site = factor(Site, levels = c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "Dutch Creek Park",
+                                          "CTC Open Space",
+                                          "Mulberry")))
+
+  longCen = longCen %>% left_join(data %>% select(Date, Site, Colr, Shp),
+                                  by = c("Date","Site"))
+  
+  pltPoint = longCen %>%
+    filter(!ValueCen)
+  
+  pltLine = longCen %>%
+    filter(ValueCen)
+  
+  pltLine = pltLine  %>%
+    mutate(DateDif = case_when(
+      Site == "Greenbelt Plateau" ~ 0.6,
+      Site == "Superior Associates" ~ 0.2,
+      Site == "Highway 36" ~ 0.4,
+      Site == "Dutch Creek Park" ~ 0,
+      Site == "CTC Open Space" ~ 0.8,
+      Site == "Mulberry" ~ 0
+    ))
+  
+  plt = ggplot() +
+    bottomSlant +
+    geom_point(data = pltPoint,
+               color = pltPoint$Colr,
+               shape = pltPoint$Shp,
+               fill = pltPoint$Colr,
+               aes(x = Date, y = Value),
+               size = 6)
+  if(metHere %in% c("Na_Filtered","Sr_Filtered","Na_Total","Sr_Total","Chloride","Sulfate")){
+    plt = plt + 
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date+DateDif, xend = Date+DateDif,
+                     y = Value, yend = maxY),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date-1+DateDif, xend = Date+1+DateDif,
+                     y = Value, yend = Value),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    scale_x_date(date_labels = dateFormat,
+                 date_breaks = '1 month',
+                 limits = xR) + 
+    labs(shape = "", color = "", linetype = "", x = "", y = "") +
+    theme(legend.position = 'none',
+          axis.text.x = element_blank(),
+          text = element_text(size=txtSize)) +
+      scale_y_continuous(limits = c(0,maxY),
+                         expand = c(0,0),
+                         labels = label_comma())
+  } else {
+    plt = plt + 
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date+DateDif, xend = Date+DateDif,
+                     y = 0, yend = Value),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date-1+DateDif, xend = Date+1+DateDif,
+                     y = Value, yend = Value),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date-1+DateDif, xend = Date+1+DateDif,
+                     y = 0, yend = 0),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    #scale_color_manual(values = colLst) +
+    #scale_fill_manual(values = colLst) +
+    #scale_shape_manual(values = shps) +
+    scale_x_date(date_labels = dateFormat,
+                 date_breaks = '1 month',
+                 limits = xR) +
+    labs(shape = "", color = "", linetype = "", x = "", y = "") +
+    theme(legend.position = 'none',
+          axis.text.x = element_blank(),
+          text = element_text(size=txtSize)) +
+      scale_y_continuous(labels = label_comma())
+  }
+  plt
+}
+
+make_overtime_censored_both = function(dataIn,analyte,cenCol,xR,particData,txtSize=24,al=.5){
+  if(al != 1){
+    lt = 1
+  } else {
+    lt = 2
+  }
+
+  metHere = analyte#setdiff(metNames,setdiff(metNames,names(data)))
+  cenHere = cenCol#paste0(metHere,"Cen")
+  metOnly = sub("_.*","",metHere)
+
+  data = dataIn %>%
+    mutate(Colr = cbLookupParticFilt[Site]) %>%
+    filter(!is.na(get(metHere)))
+    
+  vals = data %>%
+    select(Date, Site, all_of(metHere)) %>%
+    pivot_longer(cols = -c(Date,Site),
+                 names_to = "Variable",
+                 values_to = "Value")
+  
+  maxV = data %>%
+    pull(all_of(metHere)) %>%
+    max()
+  
+  maxY = maxV * 1.2
+
+  cenVals = data %>%
+    select(Date, Site, all_of(cenHere)) %>%
+    pivot_longer(cols = -c(Date,Site),
+                 names_to = "Variable",
+                 values_to = "ValueCen") %>%
+    mutate(
+      ValueCen = case_when(
+        ValueCen == "0" ~ F,
+        T ~ T),
+      Variable = sub("Cen","",Variable))
+  
+  
+  longCen = vals %>%
+    full_join(cenVals, by = c("Date","Site","Variable")) %>%
+    mutate(Site = factor(Site, levels = c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "Dutch Creek Park",
+                                          "CTC Open Space",
+                                          "Mulberry")))
+
+  longCen = longCen %>% left_join(data %>% select(Date, Site, Colr, Shp),
+                                  by = c("Date","Site"))
+  
+  particData = particData %>%
+    mutate(Colr = cbLookupPartic[Site],
+         Shp = shapeLookup[Site])
+  
+  particPoint = particData %>%
+    filter(Metal == metOnly,
+           ParticulateMin == ParticulateMax)
+  
+  particLine = particData %>%
+    filter(Metal == metOnly,
+           ParticulateMin != ParticulateMax)
+  
+  pltPoint = longCen %>%
+    filter(!ValueCen)
+  
+  pltLine = longCen %>%
+    filter(ValueCen)
+  
+  pltLine = pltLine  %>%
+    mutate(DateDif = case_when(
+      Site == "Greenbelt Plateau" ~ 0.6,
+      Site == "Superior Associates" ~ 0.2,
+      Site == "Highway 36" ~ 0.4,
+      Site == "Dutch Creek Park" ~ 0,
+      Site == "CTC Open Space" ~ 0.8,
+      Site == "Mulberry" ~ 0
+    ))
+  
+  plt = ggplot() +
+    bottomSlant +
+    geom_point(data = pltPoint,
+               color = pltPoint$Colr,
+               shape = pltPoint$Shp,
+               fill = pltPoint$Colr,
+               aes(x = Date, y = Value),
+               size = 6)
+  if(metHere %in% c("Na_Filtered","Sr_Filtered","Na_Total","Sr_Total")){
+    plt = plt + 
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date+DateDif, xend = Date+DateDif,
+                     y = Value, yend = maxY),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date-1+DateDif, xend = Date+1+DateDif,
+                     y = Value, yend = Value),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    scale_x_date(date_labels = dateFormat,
+                 date_breaks = '1 month',
+                 limits = xR) + 
+    labs(shape = "", color = "", linetype = "", x = "", y = "") +
+    theme(legend.position = 'none',
+          axis.text.x = element_blank(),
+          text = element_text(size=txtSize)) +
+      scale_y_continuous(limits = c(0,maxY),
+                         expand = c(0,0),
+                         labels = label_comma())
+  } else {
+    plt = plt + 
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date+DateDif, xend = Date+DateDif,
+                     y = 0, yend = Value),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date-1+DateDif, xend = Date+1+DateDif,
+                     y = Value, yend = Value),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    geom_segment(data = pltLine,
+                 color = pltLine$Colr,
+                 aes(x = Date-1+DateDif, xend = Date+1+DateDif,
+                     y = 0, yend = 0),
+                 linewidth = 1.5, linetype = lt,
+                 alpha = al) +
+    #scale_color_manual(values = colLst) +
+    #scale_fill_manual(values = colLst) +
+    #scale_shape_manual(values = shps) +
+    scale_x_date(date_labels = dateFormat,
+                 date_breaks = '1 month',
+                 limits = xR) +
+    labs(shape = "", color = "", linetype = "", x = "", y = "") +
+    theme(legend.position = 'none',
+          axis.text.x = element_blank(),
+          text = element_text(size=txtSize)) +
+      scale_y_continuous(labels = label_comma())
+  }
+  
+  plt = plt +
+    geom_point(data = particPoint,
+               color = particPoint$Colr,
+               shape = particPoint$Shp,
+               fill = particPoint$Colr,
+               size = 6,
+               aes(x=Date, y=ParticulateMax))
+  
+  plt
+}
+
+regimeGrid = function(data, analytes, censors){
+  outPlts = vector(mode = 'list', length = 3*length(analytes))
+  sm = data %>% filter(Type == "Snowmelt")
+  smX = sm$Date %>% range()
+  smX = as.Date(c("2022-01-01","2022-11-29"))
+  rn = data %>% filter(Type == "Rain")
+  rnX = rn$Date %>% range()
+  rnX = as.Date(c("2022-01-01","2022-11-29"))
+  bf = data %>% filter(Type == "Baseflow")
+  bfX = bf$Date %>% range()
+  bfX = as.Date(c("2022-01-01","2022-11-29"))
+  for(i in 1:length(analytes)){
+    yLab = val_cen_lab %>% filter(Name == analytes[i]) %>% pull(Label)
+    #data = dataIn %>% filter(!is.na(analytes[i]))
+    pltSnow = make_overtime_censored(sm, analytes[i], censors[i],smX) 
+    if(yLab %in% mgs){
+      pltSnow = pltSnow + labs(y=bquote(.(yLab)*" (mg L"^-1*")"))
+    } else if(yLab == "Ammonia"){
+      pltSnow = pltSnow + labs(y=bquote("Ammonium (μg L"^-1*")"))
+    } else if(yLab == "Conductivity"){
+      pltSnow = pltSnow + labs(y=bquote(.(yLab)*" (μS cm"^-1*")"))
+    } else if(yLab %in% c("Alkalinity","Hardness")){
+      pltSnow = pltSnow + labs(y=bquote(.(yLab)*" (mg L"^-1*")"))
+    } else if(yLab %!in% no_bq){
+      pltSnow = pltSnow + labs(y=bquote(.(yLab)*" (μg L"^-1*")"))
+    } else {
+      pltSnow = pltSnow + labs(y=yLab)
+    }
+    pltRain = make_overtime_censored(rn, analytes[i],censors[i],rnX)
+    pltBase = make_overtime_censored(bf, analytes[i],censors[i],bfX)
+    outPlts[[i*3-2]] = pltSnow
+    outPlts[[i*3-1]] = pltRain
+    outPlts[[i*3]] = pltBase
+    if(analytes[i]=="TDP"){
+      outPlts[[i*3-2]] = pltSnow + 
+        theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+    }
+  }
+  outPlts[[1]] = outPlts[[1]] + labs(title = "Snowmelt") + 
+    theme(plot.title = element_text(hjust = 0.5))
+  outPlts[[2]] = outPlts[[2]] + labs(title = "Rain") +
+    theme(plot.title = element_text(hjust = 0.5))
+  outPlts[[3]] = outPlts[[3]] + labs(title = "Baseflow") +
+    theme(plot.title = element_text(hjust = 0.5))
+  outPlts[[i*3-2]] = outPlts[[i*3-2]] +
+    theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+  outPlts[[i*3-1]] = outPlts[[i*3-1]] +
+    theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+  outPlts[[i*3-0]] = outPlts[[i*3-0]] +
+    theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+  outPlts
+}
+
+RegimeSave = function(analytes,name,data=wide4,
+                      pltPth = ""){
+  jHs = c(7,11,15,20,25,30,35,40,45,50,55,60)
+  jpgH = jHs[length(analytes)]
+  nms = val_cen_lab %>% 
+    filter(Name %in% analytes) %>%
+    pull(Name)
+  cens = val_cen_lab %>%
+    filter(Name %in% analytes) %>%
+    pull(CenN)
+  plts = regimeGrid(data, nms, cens)
+  plts_grid = plot_grid(plotlist = plts, ncol = 3, align = 'v')
+  ggsave(paste0(pltPth,name,".jpg"),
+         plts_grid,
+         device = 'jpg',
+         width = 23,
+         height = jpgH)
+}
+
+
+regime_boxplot_many = function(datIn, varCen, fName='',wilcs=wilcVals,
+                          pth = "./",sameScale = F,
+                          saveImg = F){
+  pList = vector(mode = 'list', length = 3*length(varCen))
+  i = 1
+  for(var in varCen){
+    varMaxY = 0
+    pt = make_boxplot_censored_1yrLet_Reg(datIn,var,wilcs,"Snowmelt")
+    if(i<(length(pList)-2)){pt = pt + labs(x='')}
+    pList[[i]] = pt
+    maxY =layer_scales(pt)$y$range$range[2]
+    if(maxY > varMaxY){varMaxY = maxY}
+    i = i + 1
+    
+    pt = make_boxplot_censored_1yrLet_Reg(datIn,var,wilcs,"Rain")
+    if(i<(length(pList)-2)){pt = pt + labs(x='')}
+    pt = pt + labs(y='')
+    pList[[i]] = pt
+    maxY =layer_scales(pt)$y$range$range[2]
+    if(maxY > varMaxY){varMaxY = maxY}
+    i = i + 1
+    
+    pt = make_boxplot_censored_1yrLet_Reg(datIn,var,wilcs,"Baseflow")
+    if(i<(length(pList)-2)){pt = pt + labs(x='')}
+    pt = pt + labs(y='')
+    pList[[i]] = pt
+    maxY =layer_scales(pt)$y$range$range[2]
+    if(maxY > varMaxY){varMaxY = maxY}
+    i = i + 1
+    
+    if(sameScale){
+      pList[[i-1]] = pList[[i-1]] + scale_y_continuous(limits = c(NA,varMaxY))
+      pList[[i-2]] = pList[[i-2]] + scale_y_continuous(limits = c(NA,varMaxY))
+      pList[[i-3]] = pList[[i-3]] + scale_y_continuous(limits = c(NA,varMaxY))
+    }
+  }
+  pList[[i-1]] = pList[[i-1]] + theme(axis.text.x = element_text())
+  pList[[i-2]] = pList[[i-2]] + theme(axis.text.x = element_text())
+  pList[[i-3]] = pList[[i-3]] + theme(axis.text.x = element_text())
+  pOut = plot_grid(plotlist = pList,align = 'vh',ncol=3)
+  #name = sub("Cen","",varCen)
+  if(saveImg){
+    ggsave(paste0(pth,fName,'.jpg'),
+           pOut,
+           device = 'jpg',
+           width = 23,
+           height = 5*length(varCen)+2)
+  }
+}
+
+make_boxplot_censored_1yrLet_Reg = function(dataIn,cenName,
+                                            wilcLet,regime,
+                                            txtSize = 24,
+                                            doCen=T){
+  
+  met = sub("Cen","",cenName )
+  data = dataIn %>%
+    filter(Type == regime) %>%
+    mutate(Site = factor(Site,
+                         levels = c("Greenbelt Plateau",
+                                    "Superior Associates",
+                                    "Highway 36",
+                                    #"Dutch Creek Park",
+                                    "CTC Open Space")),
+                                    #"Mulberry")),
+           Site2 = case_when(
+             Site == "Greenbelt Plateau" ~ "Greenbelt\nPlateau",
+             Site == "Superior Associates" ~ "Superior\nAssociates",
+             #Site == "Dutch Creek Park" ~ "Dutch Creek\nPark",
+             Site == "CTC Open Space" ~ "CTC Open\nSpace",
+             T ~ Site),
+           Site2 = factor(Site2,
+                          levels = c("Greenbelt\nPlateau",
+                                     "Superior\nAssociates",
+                                     "Highway 36",
+                                     #"Dutch Creek\nPark",
+                                     "CTC Open\nSpace"))) %>%
+                                     #"Mulberry"))) %>%
+    select(Site, all_of(c(met,cenName)),Colr,Site2)
+  
+  siteOrder = data$Site %>% levels()
+  
+#  if(met == "Fe" & tvd == "Total"){
+#    data = data %>%
+#      filter(Fe < 30000)
+#  }
+  
+  cenPeak0 = data %>%
+    select(Site) %>%
+    unique() %>%
+    arrange(Site) %>%
+    mutate(max0 = 0)
+  
+  measMinInf = data %>%
+    select(Site) %>%
+    unique() %>%
+    arrange(Site) %>%
+    mutate(minInf = Inf)
+  
+  dataCenPeakVals = data %>%
+    arrange(Site) %>%
+    mutate(Val = .[[2]],
+           Cen = .[[3]]) %>%
+    filter(Cen != "0") %>%
+    group_by(Site) %>%
+    mutate(max = max(Val,na.rm=T),
+           min = min(Val,na.rm=T)) %>%
+    select(Site,max,min) %>%
+    unique()
+  
+  dataMeasMinVals = data %>%
+    arrange(Site) %>%
+    mutate(Val = .[[2]],
+           Cen = .[[3]]) %>%
+    filter(Cen == "0") %>%
+    group_by(Site) %>%
+    mutate(#max = max(Val),
+           min = min(Val)) %>%
+    select(Site,min) %>%
+    unique()
+  
+  dataNums = data %>%
+    group_by(Site) %>%
+    summarise(n=n())
+  
+  dataMeasMaxVals = data %>%
+    arrange(Site) %>%
+    mutate(Val = .[[2]],
+           Cen = .[[3]]) %>%
+    filter(Cen == "0") %>%
+    group_by(Site) %>%
+    mutate(#max = max(Val),
+           max = max(Val,na.rm=T)) %>%
+    select(Site,max) %>%
+    unique()
+  
+  dataCenPeaks = left_join(cenPeak0,
+                           dataCenPeakVals) %>%
+    mutate(
+      max = case_when(
+        is.na(max) ~ 0,
+        T ~ max),
+      min = case_when(
+        is.na(min) ~ 0,
+        T ~ min
+      )) %>%
+    select(-max0)
+  
+  dataMeasMins = left_join(measMinInf,
+                           dataMeasMinVals) %>%
+    mutate(
+      #max = case_when(
+      #  is.na(max) ~ 0,
+      #  T ~ max),
+      min = case_when(
+        is.na(min) ~ Inf,
+        T ~ min
+      )) %>%
+    select(-minInf)
+  
+  
+  maxs = dataCenPeaks %>% pull(max)
+  lows = dataCenPeaks %>% pull(min)
+  mins = rep(0,length(maxs))
+  minMeas = dataMeasMins %>% pull(min)
+  maxMeas = dataMeasMaxVals %>% pull(max)
+  
+  
+  if(!(met == "Na_Total") & 
+     !(met == "Na_Filtered") &
+     !(met == "Chloride") &
+     !(met == "Sulfate")){
+  for(i in 1:length(lows)){
+    if(minMeas[i] < lows[i]){
+      # multiply censored, with one value below the lowest measured, so set
+      # lowest MRL to 0, so full area becomes light grey covered.
+      lows[i] = 0
+    }
+  }
+  }
+  
+  
+  
+  x_strt = c()
+  x_end = c()
+  for(i in 1:nrow(dataCenPeaks)){
+    x_strt = c(x_strt,-.5+i)
+    x_end = c(x_end,.5+i)
+  }
+  
+  dataPlt = data %>%
+    mutate(Val = .[[2]])
+  
+  for(i in 1:length(maxs)){
+    ste = siteOrder[i]
+    if(maxs[i] == lows[i]){
+      # Runs if this site/analyte pair is singularly censored. Replaces
+      # values at the MRL with 90% of that value, to ensure it is below
+      # the censored area.
+      dataPlt = dataPlt %>%
+        mutate(Val = case_when(
+          (Site == ste & Val == maxs[i]) ~ 0.9*maxs[i],
+          T ~ Val))
+    }
+  }
+  
+  maxAll = dataPlt %>% pull(Val) %>% max(na.rm=T)
+  
+  if(met %in% c("Na_Total","Na_Filtered")){
+    lowOrig = lows
+    maxOrig = maxs
+    # Min to Low is solid
+    # Min to Max is alpha
+
+    # Now Min is maxAll
+    mins = rep(maxAll,nrow(dataCenPeaks))
+    lows = maxOrig
+    lows[lows == 0] = maxAll
+    maxs = lowOrig
+    maxs[maxs == 0] = maxAll
+    
+    lows[4] = maxAll
+
+    
+  } else if (met %in% c("Chloride","Sulfate")){
+    for(i in 1:4){
+      if(maxs[i] == 0){
+        maxs[i] = 0
+        mins[i] = 0
+        lows[i] = 0
+      } else if(maxMeas[i] >= lows[i]){
+      # There was measured value above highest censored, so all light grey
+        maxs[i] = lows[i]
+        mins[i] = maxAll
+        lows[i] = maxAll
+      } else {
+        mins[i] = maxAll
+        maxs[i] = maxAll
+      }
+    }
+  } else if(met == "Sr_Total"){
+    mins[1] = maxAll
+    maxs[1] = 500
+    lows[1] = maxAll
+  }
+
+  
+  fillColr = dataPlt %>%
+    select(Site2,Colr) %>%
+    unique() %>%
+    arrange(Site2) %>%
+    pull(Colr) %>%
+    as.vector()
+  
+  fillColrB = dataPlt %>%
+    group_by(Site) %>%
+    mutate(n=n()) %>%
+    ungroup() %>%
+    filter(n>3) %>%
+    select(Site2,Colr) %>%
+    unique() %>%
+    arrange(Site2) %>%
+    pull(Colr) %>%
+    as.vector
+  
+  fillColrP = dataPlt %>%
+    group_by(Site) %>%
+    mutate(n=n()) %>%
+    ungroup() %>%
+    filter(n<=3) %>%
+    select(Site2,Colr) %>%
+    unique() %>%
+    arrange(Site2) %>%
+    pull(Colr) %>%
+    as.vector
+  
+  wilcLets = wilcLet %>%
+    filter(FlowRegime == regime) %>%
+    #filter(is.na(FlowRegime)) %>%
+    filter(Analyte == met) %>%
+    select(all_of(siteOrder)) %>%
+    pivot_longer(cols = everything(),
+                 names_to ="Site",
+                 values_to = "Let")
+  
+  wilcX = (x_end - x_strt)/2 + x_strt
+  
+  wilcLoc = dataPlt %>%
+    group_by(Site) %>%
+    summarise(m = max(get(met),na.rm=T)) %>%
+    ungroup() %>%
+    mutate(maxV = max(m),
+           m = case_when(
+             met == 'pH' ~ 6,
+             T ~ m + maxV*.1)) %>%
+    select(-maxV) %>%
+    mutate(xLoc = wilcX) %>%
+    left_join(wilcLets)
+  
+  
+  numLoc = wilcLoc %>%
+    left_join(dataNums) %>%
+    mutate(y_num = min(0-m/15))
+  
+#  if(met == "Al_Filtered"){
+#    wilcLoc = wilcLoc %>%
+#      mutate(m = case_when(
+#        Site == "Superior Associates" ~ 150,
+#        T ~ m))
+#  }
+  
+  
+#  tvlab = sub(".*_","",met)
+#  mlab =  sub("_.*","",met)
+
+  
+  if(min(numLoc$n) <= 3){
+    dataPlt = dataPlt %>%
+      mutate(negY = -200) %>%
+      group_by(Site) %>%
+      mutate(n=n())
+    
+    pt = ggplot() +
+      geom_point(data = dataPlt, aes(x=Site2, y = negY)) +
+      geom_boxplot(data = dataPlt %>% filter(n > 3),
+                   aes(x=Site2, y = Val, fill = Site2)) +
+      scale_fill_manual(values=fillColrB) +
+      new_scale_fill()+
+      geom_point(data = dataPlt %>% filter(n<=3),
+                 aes(x=Site2, y = Val,color = Site2,fill = Site2),
+                 size = 4)+
+      scale_color_manual(values = fillColrP) +
+      scale_fill_manual(values = fillColrP) +
+      scale_y_continuous(limits = c(0,NA)) +
+      labs(fill = '',color = '')
+
+  } else {
+    pt = ggplot() +
+      geom_boxplot(data = dataPlt,
+                   aes(y = Val,
+                       x = Site2,
+                       fill = Site2)) +
+          scale_fill_manual(values=fillColr)
+  }
+  if(doCen){
+  pt = pt +
+    # Light grey for the max MRL
+    geom_rect(aes(xmin=x_strt[1],xmax=x_end[1],ymin=mins[1],ymax=maxs[1]),alpha=.5) +
+    geom_rect(aes(xmin=x_strt[2],xmax=x_end[2],ymin=mins[2],ymax=maxs[2]),alpha=.5) +
+    geom_rect(aes(xmin=x_strt[3],xmax=x_end[3],ymin=mins[3],ymax=maxs[3]),alpha=.5) +
+    geom_rect(aes(xmin=x_strt[4],xmax=x_end[4],ymin=mins[4],ymax=maxs[4]),alpha=.5) +
+    #geom_rect(aes(xmin=x_strt[5],xmax=x_end[5],ymin=mins[5],ymax=maxs[5]),alpha=.5) +
+    #geom_rect(aes(xmin=x_strt[6],xmax=x_end[6],ymin=mins[6],ymax=maxs[6]),alpha=.5) +
+    # Solid grey for lowest MRL
+    geom_rect(aes(xmin=x_strt[1],xmax=x_end[1],ymin=mins[1],ymax=lows[1])) +
+    geom_rect(aes(xmin=x_strt[2],xmax=x_end[2],ymin=mins[2],ymax=lows[2])) +
+    geom_rect(aes(xmin=x_strt[3],xmax=x_end[3],ymin=mins[3],ymax=lows[3])) +
+    geom_rect(aes(xmin=x_strt[4],xmax=x_end[4],ymin=mins[4],ymax=lows[4])) +
+    #geom_rect(aes(xmin=x_strt[5],xmax=x_end[5],ymin=mins[5],ymax=lows[5])) +
+    #geom_rect(aes(xmin=x_strt[6],xmax=x_end[6],ymin=mins[6],ymax=lows[6])) +
+    
+    geom_segment(aes(x=x_strt[1],xend=x_end[1],y=maxs[1],yend=maxs[1])) +
+    geom_segment(aes(x=x_strt[2],xend=x_end[2],y=maxs[2],yend=maxs[2])) +
+    geom_segment(aes(x=x_strt[3],xend=x_end[3],y=maxs[3],yend=maxs[3])) +
+    geom_segment(aes(x=x_strt[4],xend=x_end[4],y=maxs[4],yend=maxs[4]))
+  }
+  pt = pt +
+    #geom_segment(aes(x=x_strt[5],xend=x_end[5],y=maxs[5],yend=maxs[5])) +
+    #geom_segment(aes(x=x_strt[6],xend=x_end[6],y=maxs[6],yend=maxs[6])) +
+
+    geom_text(data = wilcLoc, aes(x=xLoc, y = m, label = Let),
+              size = 6) +
+    geom_text(data = numLoc, aes(x=xLoc,y=y_num,label = n),
+              size = 6)+
+    
+    bottomSlant +
+    labs(x=regime) + 
+#    labs(y=bquote(.(tvlab)~.(mlab)*" (μg L"^-1*")")) +
+    theme(legend.position='none',
+          axis.text.x=element_blank()) +
+    scale_y_continuous(labels = label_comma(),limits = c(numLoc$y_num %>% min(),NA))
+  
+  if(met %in% c("K_Filtered","K_Total","Ca_Filtered","Ca_Total",
+                "Mg_Filtered","Mg_Total","Na_Filtered","Na_Total")){
+    ylab = paste0(sub(".*_","",met)," ",sub("_.*","",met))
+    pt = pt +
+      labs(y=bquote(.(ylab)*" (mg L"^-1*")"))
+  } else if(met %in% names_met){
+    ylab = paste0(sub(".*_","",met)," ",sub("_.*","",met))
+    pt = pt +
+      labs(y=bquote(.(ylab)*" (μg L"^-1*")"))
+  } else if(met == "Ammonia"){
+    pt = pt +
+      labs(y=bquote("Ammonium (μg L"^-1*")"))
+  } else if(met %in% mgs){
+    pt = pt +
+      labs(y=bquote(.(met)*" (mg L"^-1*")"))
+  } else if(met %in% ugs){
+    pt = pt +
+      labs(y=bquote(.(met)*" (μg L"^-1*")"))
+  } else if(met == "Temp"){
+    pt = pt + 
+      labs(y = "Temp (°C)")
+  } else if(met == "Turbidity"){
+    pt = pt + 
+      labs(y = "Turbidity (NTU)")
+  } else if(met == "Conductivity"){
+    pt = pt + labs(y=bquote("Conductivity (μS cm"^-1*")"))
+  } else if(met == "NPOC"){
+    pt = pt + labs(y=bquote("DOC (mg L"^-1*")"))
+  } else {
+    pt = pt + 
+      labs(y = met)
+  }
+  
+  if(met == 'pH'){
+    pt = pt + scale_y_continuous(limits = c(6,9.5))
+  }
+  
+  pt
+  
+}
+
+precip_plot = function(sampleDates = sampleDates,
+                       bugDates = wide4,
+                       precip = precip,
+                       start='2020-01-01',end='2030-01-01',months = 2,
+                       addBugs = F){
+  
+  start = '2022-01-01'
+  end = '2022-12-02'
+  
+  samp_dates = sampleDates %>% pull(Date) %>% unique()
+
+  samp_date_plt = tibble('Date' = samp_dates,
+                         'Label' = 'Water Quality Sample')
+
+  samp_date_plt = samp_date_plt %>%
+    filter(Date >= start,
+           Date <= end)
+  
+  bug_dates = bugDates %>%
+    # Drops the outsourced run mid-July
+    filter(!is.na(Species_Richness)) %>%
+#    mutate(Date = as.Date(Date)) %>%
+    pull(Date) %>% unique()
+  
+  bug_date_plt = tibble('Date' = bug_dates,
+                        'Label' = 'Benthic Sample')
+  bug_date_plt = bug_date_plt %>%
+    filter(Date >= start,
+           Date <= end)
+  
+  dataWQ2 = precip %>%
+    filter(Date >= start,
+           Date <= end) %>%
+    mutate(Avg = Avg * 2.54)
+  
+  precip_point = ggplot() +
+    geom_vline(data = samp_date_plt,
+               aes(xintercept=Date,linetype = Label),
+               linewidth=1.2,color='black') +
+    geom_point(data = dataWQ2 %>%
+                 filter(Avg>0),
+               aes(x=Date,
+                   y=Avg,
+                   color=Type,shape=Type),
+               size=6) +
+  #  geom_errorbar(aes(x=Date,ymin=Min,ymax=Max),
+#                width=2,size=1)+
+    scale_linetype_manual(values = c(2))+
+    labs(color='',shape='',linetype='',
+         x = "Date (2022)",
+         y='Water-Equivalent Precipitation (cm)') +
+    bottomSlant
+
+  if(months == 1){
+    precip_point = precip_point + month_one
+  } else if (months == 2){
+    precip_point = precip_point + month_two
+  } else {
+    precip_point = precip_point + month_three
+  }
+  
+  if(addBugs){
+    precip_point = precip_point +
+      geom_vline(data = bug_date_plt,
+                 aes(xintercept = Date,linetype=Label),
+                 linewidth=1.2,col='black') +
+      scale_linetype_manual(values=c(1,3)) +
+      scale_x_date(date_labels = "%b", date_breaks = '1 month')
+  }
+  
+  precip_point
+}
+
+boxplot_bugs = function(dataIn=wide4,var){
+  analytes = var
+  # If the x-axis label angle isn't 90, then labels needs a horizontal offset 
+
+  # Filter the input data to only include the analytes, Site and cbCol. cbCol 
+  # is the colorblind friendly hex code associated with the sample site.
+  # This tibble will be the tibble used in the final plot
+  plt_data = dataIn %>%
+    filter(!is.na(get(analytes))) %>%
+    mutate(Site = factor(Site, levels = c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "CTC Open Space"))) %>%
+    select(Site,all_of(var),Colr) %>%
+#    select(Site,all_of(analytes),Colr) %>%
+    # Transform the data into a long tibble, where the multiple columns get 
+    # transformed into Site, Analyte, Concentration, and cbCol
+    pivot_longer(cols = all_of(analytes),
+                 names_to = "Analyte",
+                 values_to = "Concentration") %>%
+    # Filter to only include entries with a concentration that exist and > 0.
+    #filter(!is.na(Concentration)) %>%
+    #filter(Concentration > 0) %>%
+    # Making the analyte column a factor keeps them in the order provided
+    mutate(#Analyte = factor(Analyte,levels=analytes),
+           # Create empty columns that values will be saved to later
+           # for labels
+           num = NA_real_,
+           let = NA_character_,
+           xpos = NA_real_,
+           ypos_n = NA_real_,
+           ypos_l = NA_real_)
+  
+ #plt_data$Site = plt_data$Site %>% droplevels()
+  
+  # Find the lowest concentration of all analytes, multiplied by 0.4 
+  yn = plt_data %>% pull(Concentration) %>% min() * .4#- 
+    #(plt_data %>% pull(Concentration) %>% max() *.1)
+  
+  if(analytes == "pH"){
+    yn = 5
+  } else if(analytes == "Total"){
+    yn = -35
+  }
+  
+  # Set the ypos_n to the previous value.
+  # This will be the y-value for number of samples label
+  plt_data$ypos_n = yn
+  
+  # A 'for loop' to get the wilcox values, calculate one analye at a time.
+  for(i in 1:length(analytes)){
+    # Save the analyte to be analyzed
+    a = analytes[i]
+    # Make a variable to track if there are enough values to
+    # calculate a pValue
+    pValue = T
+    
+    # Filter current data to only include rows with the current analyte.
+    # Then group the rows by sample location, and calculate the number of 
+    # samples at each site.
+    dat = plt_data %>% filter(Analyte == a) %>%
+      group_by(Site) %>%
+      mutate(n = n())
+    
+    # Run a pairwise wilcox test on the concentrations between each site.
+    # The output is a triangle matrix of p-values
+    wilcox_result = pairwise.wilcox.test(dat %>% pull('Concentration'),
+                                         dat %>% pull('Site'),
+                                         p.adjust.method = 'none')
+    
+    # Check that there was enough data to run a wilcox test. If the pvalue 
+    # matrix has 0 rows, then set 'pValue' to False so the labels get set 
+    # correctly later.
+    if(nrow(wilcox_result$p.value) == 0){
+      pValue = F
+    } else {
+      # Use a  function to turn the triangle matrix into a square matrix 
+      wilcox_matr = tri.to.squ(wilcox_result$p.value)
+      
+      # Use a function to turn the matrix of p-values into a list of letters 
+      # for each site.Each site is given a letter based on the p-value 
+      # relationships with each other site. If a p-value between sites
+      # is less than or equal to 0.05, they will be marked as
+      # different groups.
+      let = multcompLetters(wilcox_matr,
+                            compare="<=",
+                            threshold = 0.05,
+                            Letters = letters)
+    }
+    
+    # Determines which sites have data for the current analyte. Another 
+    # 'for loop' to  analyze one site at a time, and gather stats on that
+    # site to make labels.
+    for(j in 1:length(dat %>% pull(Site) %>% unique())){
+        # save the site to look at. First way doesn't work right.
+        #s = unique((dat$Site))[j]
+        s = (dat$Site %>% levels)[j]
+        # filter the single analyte data to only this single site. Save the 
+        # value in column n, which is the number of samples at this site.
+        n = dat %>% filter(Site == s) %>%  pull(n) %>% unique()
+        
+        # Save that n value as the number label in the plot column for 
+        # this site and analyte pair
+        plt_data$num[plt_data$Site == s & plt_data$Analyte == a] = n
+        
+        # Filter the single analyte data to only this site, and find the 
+        # lowest concentration. save 90% of that value, to be used in 
+        # next line
+        yl = dat %>% filter(Site == s) %>% pull(Concentration) %>% min() * .8
+        
+        # Set that value as the y-axis location for the wilcox group label
+        if(a == "Total"){
+          plt_data$ypos_l[plt_data$Site == s & plt_data$Analyte == a] = yl - 10
+        } else {
+          plt_data$ypos_l[plt_data$Site == s & plt_data$Analyte == a] = yl
+        }
+        # Checks to make sure there are p-value groups for this site and 
+        # analyte pair. If there are group letters, save the group letter 
+        # for this site to be used next.
+        if(pValue){
+          l = let$Letters[[j]]
+        } else {
+          # If there's no p-value groups, use '--' instead of a letter
+          l = '--'
+        }
+        # Save the letter value (or '--') to the plot tibble for the current
+        # site analyte pair
+        plt_data$let[plt_data$Site == s & plt_data$Analyte == a] = l
+    }
+  }
+  
+  # Save the list of hex code colors used for this plot
+  #col_used = plt_data %>% pull(cbCol) %>% unique()
+  
+  # Find the used colors in the list of possible color codes. Matching in
+  # this way ensures the color order matches the site order.
+  #colrs = cbbPalette[cbbPalette %in% col_used]
+  ylab = bugLab %>%
+      filter(Name == var) %>%
+      pull(Label)
+    if(ylab %!in% c("Average HBTI","Invertebrate Count")){
+      ylab = sub("Average HBTI","",ylab)
+      ylab = sub("Count","",ylab)
+      ylab = sub("Percent","",ylab)
+    }
+  cls = plt_data %>% arrange(Site) %>% select(Site,Colr) %>% unique() %>% pull(Colr)
+  # Creates the plot from the tibble that has been populated
+  plt = plt_data %>%
+    ggplot() +
+    # Sets the plot as a boxplot style, with the Analytes along the x-axis, 
+    # concentration along y-axis, and the box fill color set by site.
+    geom_boxplot(
+      aes(x=Analyte,
+          y=Concentration,
+          fill=Site)) +
+    # Use the saved color list as the colors used to fill the boxplot.
+    scale_fill_manual(values = cls)+
+    # Remove axis labels on the x axis and on the legend
+    labs(x='',fill='') +
+    bottomL +
+    guides(fill = guide_legend(nrow=2,byrow=T))
+
+  # This next section is needed in case there is an inconsistent number 
+  # of sites between analytes. This ensures the labels are placed correctly
+  # along the x-axis. This step extracts graphical details about the plot.
+  plt_info = ggplot_build(plt)$data[[1]]
+  
+  # Save a list of the x-positions of each box of the boxplot
+  xpos = plt_info$x
+  
+  # xpos_n is used to keep track of which box x-labels being calculated for. 
+  xpos_n = 1
+  
+  # These nested for loops check every analyte site pair, to find the x-axis
+  # position of the corosponding box.
+  for(i in 1:(length(analytes))){
+    
+    # Save the current analyte
+    a = analytes[i]
+    for(j in 1:length(plt_data$Site %>% unique())){
+      # Save the current site to look at
+      ste = levels(plt_data$Site)[j]
+      
+      # filter the plot data to the current site and analyte, and count the 
+      # number of rows of data.
+      nr = plt_data %>%filter(Site == ste, Analyte == a) %>% nrow()
+      
+      # If there are more than 0 rows, set the xpos column for the current 
+      # analyte and site pair to the x-axis value the box is currently at.
+      if(nr != 0){
+        plt_data$xpos[plt_data$Analyte == a & plt_data$Site == ste] = xpos[xpos_n]
+        
+        # Add 1 to the variable keeping track of which box the x-axis
+        # location has been extracted from
+        xpos_n = xpos_n + 1
+      }
+    }
+  }
+  # After completing the above for loops, the x positions of labels have 
+  # been saved to the plot data tibble.
+
+  # Check if the logyes argument was set to True, or left to the 
+  #default False value.
+  
+  # Updates to the plot adding the labels.
+  plt = plt +
+    # a text update to include number of samples at each analyte site pair.
+    geom_text(data = plt_data,
+              aes(x=xpos, y=ypos_n, label=num),
+              # Use the label size value argument if provided, or use default
+              size=labSize) +
+    # Another text update to include the group letters across sites within 
+    # an analyte.
+    geom_text(data = plt_data,
+              aes(x=xpos, y=ypos_l, label=let),
+              size=labSize,
+              # If a letAng value is provided, the string of letters will be 
+              # rotated. adding a 45 degree rotation helps if sites have more 
+              # than 3 group letters
+              angle=letAng,
+              hjust=hj) +
+    # Adds the general plot formatting, of black axis lines
+    # and no background
+    bottomL +
+    # Adds the y-label provided, or the default 'Concentration (µg/L)'
+    labs(y=ylab) +
+    # Set the text of the plot to the provided size, doesn't affect the 
+    # geom_text labels.
+    theme(text = element_text(size=txtSize),
+          axis.text.x = element_blank(),
+          legend.position = 'none')
+
+  # Return the final plot as the output of the function
+  plt
+}
+
+plot_list_box = function(dataIn=wide4,names){
+  outList = vector(mode = 'list', length = length(names))
+  for(n in names){
+    plt = boxplot_bugs(var=n)
+    outList[[which(n == names)]] = plt
+  }
+  outList
+}
+
+```
+
+```{r read and tidy data}
+sampleDates = read_csv("SampleDates.csv") %>%
+  mutate(Date = as.Date(Date, format = "%d-%b-%Y"))
+
+# Sometimes it's called regime_type
+regime_type = sampleDates
+
+wide4 = read_csv("Wide4.csv")
+
+precip = read_csv("PrecipData.csv") %>%
+  mutate(City = sub(" .*","",NAME),
+         Date = as.Date(DATE,"%m/%d/%Y")) %>%
+  filter(City %in% c("SUPERIOR","LOUISVILLE")) %>%
+  select(STATION,City,Date,PRCP,SNOW,SNWD,WESF) %>%
+  arrange(Date) %>%
+  group_by(Date) %>%
+  # Anytime there is snow, there is also precipitation
+  # Conversion already done
+  summarise(Avg_Snow = mean(SNOW,na.rm=T),
+            Avg_Snow_Depth = mean(SNWD,na.rm=T),
+            Avg_Snow_Water_Equiv = mean(WESF,na.rm=T),
+            Avg_Precip = mean(PRCP,na.rm=T),
+            Min_Precip = min(PRCP,na.rm=T),
+            Max_Precip = max(PRCP,na.rm=T)) %>%
+  replace(is.na(.),0) %>%
+  rename(Avg = Avg_Precip,
+         Min = Min_Precip,
+         Max = Max_Precip) %>%
+  select(Date,Avg)
+  
+
+bugData = read_csv("Bug_Data.csv") %>%
+  group_by(Site,Date,Benthic) %>%
+  # group benthics that were reclassified after data sheet was made
+  mutate(Count = sum(Count,na.rm=T)) %>%
+  ungroup() %>%
+  unique() %>%
+  mutate(FFG = case_when(
+    FFG == "Detrivores" ~ "Detritivores",
+    FFG == "Detritivore" ~ "Detritivores",
+    T ~ FFG))
+
+names_censors = names(wide4)[grepl("Cen",names(wide4))]
+names_censors_filt = names_censors[grepl("Filtered",names_censors)]
+names_filt = sub("Cen","",names_censors_filt)
+names_censors_tots = names_censors[grepl("Total",names_censors)]
+names_tots = sub("Cen","",names_censors_tots)
+names_censors_noMet = setdiff(names_censors,
+                              c(names_censors_tots,names_censors_filt))
+names_noMet = sub("Cen","",names_censors_noMet)
+
+names_met = c(names_filt, names_tots)
+
+names_met_cen = c(names_censors_filt,names_censors_tots)
+names_noMet_cen = names_censors_noMet
+
+```
+
+```{r sampling figure}
+# Figure 3
+sampFig = precip_plot(sampleDates, wide4, precip = precip, addBugs = T)
+#sampFig
+```
+
+```{r bug plot 1}
+names_bugs = names(wide4)[c(3:28,178,179)]
+
+bugLab = tibble(
+  Name = names_bugs,
+  Label = sub("Avg","Average ",sub("_"," ",names_bugs))) %>%
+  mutate(Label = case_when(
+    Name == "Total" ~ "Invertebrate Count",
+    Name == "Chl A" ~ "Chlorophyll-a",
+    T ~ Label
+  ))
+
+# Values for the first bug boxplot
+bug_general = c("Total","Shannon Diversity Index","Species_Richness",
+                "Evenness","AvgHBTI")
+
+labSize = 6
+letAng = 0
+hj = 0.5
+
+bugbox1 = plot_grid(
+  plotlist = plot_list_box(names = bug_general),
+  align = 'vh')
+
+# Figure 4
+#bugbox1
+
+# Make and save table of wilcox for bugs
+bugAnalytes = names(wide4)[c(8,9,18,22,135,3,4,10,16,26,5,12,17,24,28)]
+
+for(var in bugAnalytes){
+  plt_data = wide4 %>%
+    filter(!is.na(get(var))) %>%
+    mutate(Site = factor(Site, levels = c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "CTC Open Space"))) %>%
+    select(Site,all_of(var)) %>%
+    #    select(Site,all_of(analytes),Colr) %>%
+    # Transform the data into a long tibble, where the multiple columns get 
+    # transformed into Site, Analyte, Concentration, and cbCol
+    pivot_longer(cols = all_of(var),
+                 names_to = "Analyte",
+                 values_to = "Concentration") %>%
+    # Filter to only include entries with a concentration that exist and > 0.
+    #filter(!is.na(Concentration)) %>%
+    #filter(Concentration > 0) %>%
+    # Making the analyte column a factor keeps them in the order provided
+    mutate(#Analyte = factor(Analyte,levels=analytes),
+      # Create empty columns that values will be saved to later
+      # for labels
+      num = NA_real_,
+      let = NA_character_,
+      xpos = NA_real_,
+      ypos_n = NA_real_,
+      ypos_l = NA_real_)
+  
+  #for(i in 1:length(bugAnalytes)){
+  # Save the analyte to be analyzed
+  a = var#bugAnalytes[i]
+  # Make a variable to track if there are enough values to
+  # calculate a pValue
+  pValue = T
+  
+  # Filter current data to only include rows with the current analyte.
+  # Then group the rows by sample location, and calculate the number of 
+  # samples at each site.
+  dat = plt_data %>% filter(Analyte == a) %>%
+    group_by(Site) %>%
+    mutate(n = n())
+  
+  # Run a pairwise wilcox test on the concentrations between each site.
+  # The output is a triangle matrix of p-values
+  wilcox_result = pairwise.wilcox.test(dat %>% pull('Concentration'),
+                                       dat %>% pull('Site'),
+                                       p.adjust.method = 'none')
+  
+  # Check that there was enough data to run a wilcox test. If the pvalue 
+  # matrix has 0 rows, then set 'pValue' to False so the labels get set 
+  # correctly later.
+  if(nrow(wilcox_result$p.value) == 0){
+    pValue = F
+  } else {
+    # Use a  function to turn the triangle matrix into a square matrix 
+    wilcox_matr = tri.to.squ(wilcox_result$p.value)
+    
+    # Use a function to turn the matrix of p-values into a list of letters 
+    # for each site.Each site is given a letter based on the p-value 
+    # relationships with each other site. If a p-value between sites
+    # is less than or equal to 0.05, they will be marked as
+    # different groups.
+    let = multcompLetters(wilcox_matr,
+                          compare="<=",
+                          threshold = 0.05,
+                          Letters = letters)
+  }
+  
+  # Determines which sites have data for the current analyte. Another 
+  # 'for loop' to  analyze one site at a time, and gather stats on that
+  # site to make labels.
+  for(j in 1:length(dat %>% pull(Site) %>% unique())){
+    # save the site to look at. First way doesn't work right.
+    #s = unique((dat$Site))[j]
+    s = (dat$Site %>% levels)[j]
+    # filter the single analyte data to only this single site. Save the 
+    # value in column n, which is the number of samples at this site.
+    n = dat %>% filter(Site == s) %>%  pull(n) %>% unique()
+    
+    # Save that n value as the number label in the plot column for 
+    # this site and analyte pair
+    plt_data$num[plt_data$Site == s & plt_data$Analyte == a] = n
+    
+    # Filter the single analyte data to only this site, and find the 
+    # lowest concentration. save 90% of that value, to be used in 
+    # next line
+    yl = dat %>% filter(Site == s) %>% pull(Concentration) %>% min() * .8
+    
+    # Set that value as the y-axis location for the wilcox group label
+    if(a == "Total"){
+      plt_data$ypos_l[plt_data$Site == s & plt_data$Analyte == a] = yl - 10
+    } else {
+      plt_data$ypos_l[plt_data$Site == s & plt_data$Analyte == a] = yl
+    }
+    # Checks to make sure there are p-value groups for this site and 
+    # analyte pair. If there are group letters, save the group letter 
+    # for this site to be used next.
+    if(pValue){
+      l = let$Letters[[j]]
+    } else {
+      # If there's no p-value groups, use '--' instead of a letter
+      l = '--'
+    }
+    # Save the letter value (or '--') to the plot tibble for the current
+    # site analyte pair
+    plt_data$let[plt_data$Site == s & plt_data$Analyte == a] = l
+  }
+  
+  bug_wilc_new = plt_data %>%
+    select(Analyte,Site,let,num) %>%
+    unique()
+  
+  if(which(var == bugAnalytes) == 1){
+    bugWilc = bug_wilc_new
+  } else{
+    bugWilc = bugWilc %>%
+      add_row(bug_wilc_new)
+  }
+}
+
+bugWilcWide = bugWilc %>%
+  pivot_wider(names_from = Site,
+              values_from = c("let","num"))
+
+# Table S9 is bugWilcWide with some names cleaned up
+#bugWilcWide
+
+```
+
+```{r chla plots}
+ffgData = wide4 %>%
+  filter(!is.na(Total)) %>%
+  select(Date,Site,contains("_Count")) %>%
+  pivot_longer(cols = -c(Date,Site),
+              names_to = "FFG",
+              values_to = "Count") %>%
+  mutate(FFG = sub("_Count","",FFG),
+         Site = factor(Site,levels = bugSites)) %>%
+  filter(Date != "2022-07-12")
+
+bugDates = ffgData %>%
+  filter(Site == "CTC Open Space") %>%
+  select(Date) %>%
+  unique() %>% 
+  pull(Date)
+
+
+combos = expand.grid(Date = bugDates,
+                     Site = c("Greenbelt Plateau",
+                                        "Superior Associates",
+                                        "Highway 36",
+                                        "CTC Open Space"),
+                     FFG = ffgData %>% pull(FFG) %>% unique()) %>% as_tibble()
+
+# Add NAs when site was dry
+for(i in 1:nrow(combos)){
+  rowAdd = combos %>%
+    slice(i) %>%
+    mutate(Count = NA_real_)
+  inBugs = ffgData %>%
+    filter(Date == rowAdd$Date,
+           Site == rowAdd$Site,
+           FFG == rowAdd$FFG)
+  if(nrow(inBugs) == 0){
+    ffgData = ffgData %>%
+      bind_rows(rowAdd)
+  }
+}
+
+colsLine = palette.colors(palette = "R4", n = 7)
+# Updated to include gaps
+plot = ffgData %>%
+  ggplot(aes(x=Date, y=Count)) +
+  geom_line(aes(color = FFG),
+            linewidth = 1) +
+  facet_wrap(.~Site) +
+  theme_bw() +
+  labs(x="",color='',
+       y = "Number of Invertebrates") +
+  scale_color_manual(values = colsLine)+
+  scale_x_date(date_breaks  = 'months', date_labels = "%b") +
+  theme_bw() + 
+  theme(
+    strip.background = element_rect(fill = 'white')
+  ) +
+  bottomSlant +
+  theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1),
+        axis.text = element_text(size = 16),
+        panel.spacing = unit(1,'lines'))
+#  theme(axis.text = element_text(size = 18))
+
+#plot
+# Figure 5a
+# Save as 1200 x 800
+
+chla_data = wide4 %>%
+  select(Date,Site,Chl_A) %>%
+  filter(!is.na(Chl_A)) %>%
+  mutate(Site = factor(Site, levels = bugSites))
+
+plotC = ggplot(chla_data) +
+  geom_line(aes(x=Date,y=Chl_A,color=Site),
+            linewidth = 1.5) +
+  scale_color_manual(values = cbLookup[bugSites]) +
+  bottomSlant +
+  labs(y=bquote("Chlorophyll-a (mg m"^-2*')'), x = "", color = '') +
+  scale_x_date(date_breaks = 'month' , date_labels = "%b")
+  
+#plotC
+
+# Saved as 1200 x 1000 for Figure 5b
+```
+
+```{r bug table at sites}
+ffgOrd = c("Scrapers","Gathering Collectors",
+           "Filtering Collectors", "Shredders",
+           "Predators/Detritivores", "Multiple")
+
+numSiteSamp = bugData %>%
+  select(Site,Date) %>%
+  unique() %>%
+  group_by(Site) %>%
+  summarise(n=n()) %>%
+  mutate(bold = ceiling(n*0.8))
+
+bugTable = bugData %>%
+  select(Site,Benthic,Count,HBI) %>%
+  group_by(Site,Benthic) %>%
+  mutate(Count = sum(Count,na.rm=T),
+         n = n()) %>%
+  unique() %>%
+  ungroup() %>%
+  mutate(
+    Abundance = case_when(
+      Count > 50 ~ "XXX",
+      Count >= 11 ~ "XX",
+      Count >= 1 ~ "X",
+      T ~ "-"),
+    Bold = case_when(
+      Site == "CTC Open Space" & n >= 8 ~ T,
+      Site == "Greenbelt Plateau" & n >= 5 ~ T,
+      Site == "Highway 36" & n >= 8 ~ T,
+      Site == "Superior Associates" & n >= 5 ~ T,
+      T ~ F),
+    Abundance = case_when(
+      Bold ~ paste0(Abundance,"-Bold"),
+      T ~ Abundance
+    )) %>%
+  left_join(bugData %>% 
+              select(Benthic,FFG) %>%
+              unique()) %>%
+  select(FFG,Benthic,HBI,Site,Abundance) %>%
+  mutate(FFG = case_when(
+    # Grouping for this table for readability
+    Benthic == "Tricladida" ~ "Predators/Detritivores",
+    FFG %in% c("Predators","Detritivores") ~ "Predators/Detritivores",
+    FFG == "-" ~ "Multiple",
+    T ~ FFG)) %>%
+  mutate(FFG = factor(FFG, levels = ffgOrd),
+         Site = factor(Site, levels = bugSites)) %>%
+  pivot_wider(names_from = Site, values_from = Abundance) %>%
+  arrange(FFG,Benthic) %>%
+  mutate(`Greenbelt Plateau` = replace_na(`Greenbelt Plateau`,"-"),
+         `Highway 36` = replace_na(`Highway 36`,"-"),
+         `CTC Open Space` = replace_na(`CTC Open Space`,"-"),
+         `Superior Associates` = replace_na(`Superior Associates`,"-")) %>%
+  select(FFG,Benthic,HBI,all_of(bugSites))
+
+
+# Table 2
+# bugTable
+```
+
+```{r Scrapers per chlA}
+pdat = wide4 %>%
+  filter(!is.na(Scrapers_Count) & !is.na(Chl_A)) %>%
+  rename(y=Scrapers_Count,x=Chl_A)
+
+ plt_chla_scrap = ggplot(data = wide4 %>%
+                           filter(!is.na(Scrapers_Count) & !is.na(Chl_A)),
+                         aes(x=Chl_A, y=Scrapers_Count)) +
+   geom_point(aes(shape = Site, color=Site),
+              size = 6) +
+   scale_color_manual(values = cbLookupBug) +
+   scale_shape_manual(values = shapesBug) +
+   bottomL +
+   labs(x = bquote("Chlorophyll A (mg/m"^2*")"),
+        y = "Number of Scrapers",
+        shape = "", color = "") +
+   guides(color=guide_legend(nrow=2,byrow=F))+
+   geom_smooth(method = 'lm',aes(color=Site),
+               se=F)
+
+ tS = 33
+ pS = 7
+ 
+ slope_CIs = tibble(
+   Site = character(),
+   SlopeMin = numeric(),
+   SlopeMax = numeric()
+ )
+ 
+chl_GBP = pdat %>% 
+  filter(Site == "Greenbelt Plateau") %>%
+  ggplot(aes(x=x,y=y))+
+  geom_smooth(method = 'lm',aes(color=Site)) +
+  geom_point(aes(shape=Site,color=Site), size = pS) +
+  scale_color_manual(values = cbLookupBug[1]) +
+  #scale_shape_manual(values = shapesBug[1]) +
+  bottomL +
+  labs(x = bquote("Chlorophyll-a (mg m"^-2*")"),
+       y = "Number of Scrapers",
+       shape = "", color = "") +
+  guides(color=guide_legend(nrow=2,byrow=F))+
+  
+  geom_text(x = 2, y = 80, label = lm_eqn(pdat %>% 
+                                            filter(Site == "Greenbelt Plateau")),
+            parse = TRUE,
+            size = 10) +
+  geom_text(x = 2, y = 70, label = lm_eqn2(pdat %>% 
+                                            filter(Site == "Greenbelt Plateau")),
+            parse = TRUE,
+            size = 10) +
+  coord_cartesian(clip='off', ylim=c(-10,110),xlim=c(0,7)) +
+  theme(text = element_text(size=tS),
+        axis.text = element_text(size=tS),
+        legend.position = 'inside',
+        legend.position.inside=c(0.25,0.9))
+  # scale_x_continuous(limits = c(0,7)) +
+  # scale_y_continuous(limits = c(0,110))
+
+sCI = confint(lm(y ~ x, data = pdat %>% filter(Site == "Greenbelt Plateau")))[2,]
+
+slope_CIs = slope_CIs %>%
+  bind_rows(
+    tibble(
+      Site = "GBP",
+      SlopeMin = as.numeric(sCI[1]),
+      SlopeMax = as.numeric(sCI[2])
+    ))
+
+chl_SA = pdat %>% 
+  filter(Site == "Superior Associates") %>%
+  ggplot(aes(x=x,y=y))+
+  geom_point(aes(shape=Site,color=Site), size = pS) +
+  scale_color_manual(values = cbLookupBug[2]) +
+  #scale_shape_manual(values = shapesBug[2]) +
+  bottomL +
+  labs(x = bquote("Chlorophyll-a (mg m"^-2*")"),
+       y = "Number of Scrapers",
+       shape = "", color = "") +
+  guides(color=guide_legend(nrow=2,byrow=F))+
+  geom_smooth(method = 'lm',aes(color=Site), se=T,fullrange = T) +
+  geom_text(x = 2, y = 40, label = lm_eqn(pdat %>% 
+                                            filter(Site == "Superior Associates")),
+            parse = TRUE,
+            size = 10)+
+  geom_text(x = 2, y = 30, label = lm_eqn2(pdat %>% 
+                                            filter(Site == "Superior Associates")),
+            parse = TRUE,
+            size = 10)+
+#  scale_x_continuous(limits = c(0,7)) +
+#  scale_y_continuous(limits = c(-10,110))
+  coord_cartesian(clip='off', ylim=c(-10,110),xlim=c(0,7))+
+  theme(text = element_text(size=tS),
+        axis.text = element_text(size=tS),
+        legend.position = 'inside',
+        legend.position.inside=c(0.25,0.9))
+
+sCI = confint(lm(y ~ x, data = pdat %>% filter(Site == "Superior Associates")))[2,]
+
+slope_CIs = slope_CIs %>%
+  bind_rows(
+    tibble(
+      Site = "SA",
+      SlopeMin = as.numeric(sCI[1]),
+      SlopeMax = as.numeric(sCI[2])
+    ))
+
+chl_H36 = pdat %>% 
+  filter(Site == "Highway 36") %>%
+  ggplot(aes(x=x,y=y))+
+  geom_point(aes(shape=Site,color=Site), size = pS) +
+  scale_color_manual(values = cbLookupBug[3]) +
+  #scale_shape_manual(values = shapesBug[3]) +
+  bottomL +
+  labs(x = bquote("Chlorophyll-a (mg m"^-2*")"),
+       y = "Number of Scrapers",
+       shape = "", color = "") +
+  guides(color=guide_legend(nrow=2,byrow=F))+
+  geom_smooth(method = 'lm',aes(color=Site)) +
+  geom_text(x = 1.5, y = 30, label = lm_eqn(pdat %>% 
+                                            filter(Site == "Highway 36")),
+            parse = TRUE,
+            size = 10)+
+  geom_text(x = 1.5, y = 20, label = lm_eqn2(pdat %>% 
+                                            filter(Site == "Highway 36")),
+            parse = TRUE,
+            size = 10)+
+  coord_cartesian(clip='off', ylim=c(-10,110),xlim=c(0,7))+
+  theme(text = element_text(size=tS),
+        axis.text = element_text(size=tS),
+        legend.position = 'inside',
+        legend.position.inside=c(0.25,0.9))
+  # scale_x_continuous(limits = c(0,7)) +
+  # scale_y_continuous(limits = c(0,110))
+
+sCI = confint(lm(y ~ x, data = pdat %>% filter(Site == "Highway 36")))[2,]
+
+slope_CIs = slope_CIs %>%
+  bind_rows(
+    tibble(
+      Site = "Hwy36",
+      SlopeMin = as.numeric(sCI[1]),
+      SlopeMax = as.numeric(sCI[2])
+    ))
+
+chl_CTC = pdat %>% 
+  filter(Site == "CTC Open Space") %>%
+  ggplot(aes(x=x,y=y))+
+  geom_point(aes(shape=Site,color=Site), size = pS) +
+  scale_color_manual(values = cbLookupBug[4]) +
+  #scale_shape_manual(values = shapesBug[4]) +
+  bottomL +
+  labs(x = bquote("Chlorophyll-a (mg m"^-2*")"),
+       y = "Number of Scrapers",
+       shape = "", color = "") +
+  guides(color=guide_legend(nrow=2,byrow=F))+
+  geom_smooth(method = 'lm',aes(color=Site)) +
+  geom_text(x = 3, y = 80, label = lm_eqn(pdat %>% 
+                                            filter(Site == "CTC Open Space")),
+            parse = TRUE,
+            size = 10)+
+  geom_text(x = 3, y = 70, label = lm_eqn2(pdat %>% 
+                                            filter(Site == "CTC Open Space")),
+            parse = TRUE,
+            size = 10)+
+  coord_cartesian(clip='off', ylim=c(-10,110),xlim=c(0,7))+
+  theme(text = element_text(size=tS),
+        axis.text = element_text(size=tS),
+        legend.position = 'inside',
+        legend.position.inside=c(0.25,0.9))
+  # scale_x_continuous(limits = c(0,7)) +
+  # scale_y_continuous(limits = c(0,110))
+
+
+sCI = confint(lm(y ~ x, data = pdat %>% filter(Site == "CTC Open Space")))[2,]
+
+slope_CIs = slope_CIs %>%
+  bind_rows(
+    tibble(
+      Site = "CTC",
+      SlopeMin = as.numeric(sCI[1]),
+      SlopeMax = as.numeric(sCI[2])
+    ))
+  
+chlA_ScrapPlts = plot_grid(plotlist = list(chl_GBP,chl_SA,chl_H36,chl_CTC))
+
+#slope_CIs
+# Figure 6
+#chlA_ScrapPlts
+```
+
+```{r Calculate exceedances plots and table}
+# Caculate exceedances for both CO and EPA,
+# Option to save off data to read in other places
+# Generate Table S7, and Figure 7
+totCs = paste0(c("Al"),"_Total")
+filtCs = paste0(c("Cr","Cu","Pb","Mn","Ni","U","Zn"),"_Filtered")
+
+excd = wide4 %>%
+  filter(Date < '2023-01-01') %>%
+  arrange(Date) %>%
+  filter(!is.na(Hardness)) %>%
+  select(Date,Site,Hardness,all_of(c(totCs,filtCs))) %>%
+  pivot_longer(cols = -c(1:3),names_to='Analyte',values_to = "Concentration") %>%
+  mutate(acuteLim = NA_real_,
+         acuteExcd = F,
+         chronLim = NA_real_,
+         chronExcd = F)
+
+for(i in 1:nrow(excd)){
+  # using Colorado exceedance calculations
+  #tv = excd$TotalVsFiltered[i]
+  m = excd$Analyte[i]
+  h = excd$Hardness[i]
+  if(h > 400){
+    h = 400
+  }
+  if(grepl("Al",m) & h > 220){
+    h = 220
+  }
+    cLim = case_when(
+      # Filtered Chronic
+      m == "Cr_Filtered" ~ exp(0.819*(log(h))+0.534),
+      m == "Cu_Filtered" ~ exp(0.8545*(log(h))-1.7428),
+      m == "Pb_Filtered" ~ (1.46203-((log(h))*0.145712))*(exp(1.273*(log(h))-4.705)),
+      m == "Mn_Filtered" ~ exp(0.3331*(log(h))+5.8743),
+      m == "Ni_Filtered" ~ exp(0.846*(log(h))+0.0554),
+      m == "U_Filtered" ~ exp(1.1021*(log(h))+2.2382),
+      m == "Zn_Filtered" ~ 0.986*exp(0.9094*(log(h))+0.6235),
+      m == "Al_Total" ~ exp(1.3695*(log(h))-0.1158)
+      )
+    aLim = case_when(
+      # Filtered Acute
+      m == "Cr_Filtered" ~ exp(0.819*(log(h))+2.5736),
+      m == "Cu_Filtered" ~ exp(0.9422*(log(h))-1.7408),
+      m == "Pb_Filtered" ~ (1.46203-((log(h))*(0.145712)))*(exp(1.273*(log(h))-1.46)),
+      m == "Mn_Filtered" ~ exp(0.3331*(log(h))+6.4676),
+      m == "Ni_Filtered" ~ exp(0.846*(log(h))+2.253),
+      m == "U_Filtered" ~ exp(1.1021*(log(h))+2.7088),
+      m == "Zn_Filtered" ~ 0.978*exp(0.9094*(log(h))+0.9095),
+      m == "Al_Total" ~ exp(1.3695*(log(h))+1.8308)
+
+    )
+  excd$acuteLim[i] = aLim
+  excd$chronLim[i] = cLim
+}
+
+excd = excd %>%
+  mutate(acuteExcd = Concentration >= acuteLim,
+         chronExcd = Concentration >= chronLim)
+
+epaMet = c("Cu","Ni","Pb","Zn","Cd")
+epaCs = c(paste0(epaMet,"_Filtered"),
+          paste0(epaMet,"_Total"))
+
+excdEPA = wide4 %>%
+  #filter(!is.na(SampleID)) %>%
+  filter(Date < '2023-01-01') %>%
+  #group_by(SampleID) %>%
+  # mutate(Hardness = case_when(
+  #   TotalVsFiltered == "Filtered" ~ (Ca/1000*2.497 + Mg/1000*4.118),
+  #   T ~ NA_real_)) %>%
+  # mutate(Hardness = case_when(
+  #   TotalVsFiltered == "Total" ~ lag(Hardness),
+  #   T ~ Hardness
+  # )) %>%
+  arrange(Date) %>%
+  ungroup() %>%
+  select(Date,Site,Hardness,all_of(epaCs)) %>%
+#  select(Date,Site,TotalVsFiltered,Hardness,Cu,Ni,Pb,Zn) %>%
+  pivot_longer(cols = -c(1:3),names_to='Analyte',values_to = "Concentration") %>%
+  mutate(acuteLim = NA_real_,
+         acuteExcd = F,
+         chronLim = NA_real_,
+         chronExcd = F)
+
+for(i in 1:nrow(excdEPA)){
+  #tv = excdEPA$TotalVsFiltered[i]
+  m = excdEPA$Analyte[i]
+  h = excdEPA$Hardness[i]
+#  if(tv == "Filtered"){
+    cLim = case_when(
+      m == "Cu_Filtered" ~ (exp(0.8545*log(h)-1.702))*(0.96),
+      m == "Ni_Filtered" ~ (exp(0.846*log(h)+0.0584))*(0.997),
+      m == "Pb_Filtered" ~ (exp(1.273*log(h)-4.705))*(1.46203-(log(h)*0.145712)),
+      m == "Zn_Filtered" ~ (exp(0.8473*log(h)+0.884))*(0.986),
+      m == "Cd_Filtered" ~ (exp(0.7977*log(h)-3.909))*(1.101672-(log(h)*0.041838)),
+#      m == "Cu_Total" ~ (exp(0.8545*log(h)-1.702)),
+#      m == "Ni_Total" ~ (exp(0.846*log(h)+0.0584)),
+      m == "Ni_Total" ~ 52,
+#      m == "Pb_Total" ~ (exp(1.273*log(h)-4.705)),
+      m == "Pb_Total" ~ 2.5,
+#      m == "Zn_Total" ~ (exp(0.8473*log(h)+0.884)),
+      m == "Zn_Total" ~ 120
+#      m == "Cd_Total" ~ (exp(0.7977*log(h)-3.909))
+    )
+    aLim = case_when(
+      m == "Cu_Filtered" ~ (exp(0.9422*log(h)-1.7))*(0.96),
+      m == "Ni_Filtered" ~ (exp(0.846*log(h)+2.255))*(0.998),
+      m == "Pb_Filtered" ~ (exp(1.273*log(h)-1.46))*(1.46203-(log(h)*0.145712)),
+      m == "Zn_Filtered" ~ (exp(0.8473*log(h)+0.884))*(0.978),
+      m == "Cd_Filtered" ~ (exp(0.9789*log(h)-3.866))*(1.136672-(log(h)*0.041838)),
+#      m == "Cu_Total" ~ (exp(0.9422*log(h)-1.7)),
+#      m == "Ni_Total" ~ (exp(0.846*log(h)+2.255)),
+      m == "Ni_Total" ~ 470,
+#      m == "Pb_Total" ~ (exp(1.273*log(h)-1.46)),
+      m == "Pb_Total" ~ 65,
+#      m == "Zn_Total" ~ (exp(0.8473*log(h)+0.884)),
+      m == "Zn_Total" ~ 120,
+      m == "Cd_Total" ~ 1.8
+#      m == "Cd_Total" ~ (exp(0.9789*log(h)-3.866))
+    )
+#  } else {
+    # cLim = case_when(
+    # 
+    # )
+    # aLim = case_when(
+    #   
+    # )
+#  }
+  excdEPA$acuteLim[i] = aLim
+  excdEPA$chronLim[i] = cLim
+}
+
+# exceedancesEPA = excdEPA  %>%
+#   mutate(acuteExcd = Concentration >= acuteLim,
+#          chronExcd = Concentration >= chronLim) %>%
+#   filter(chronExcd)
+
+excdEPA = excdEPA %>%
+  mutate(acuteExcd = Concentration >= acuteLim,
+         chronExcd = Concentration >= chronLim) %>%
+  rename(acuteLimEPA = acuteLim,
+         acuteExcdEPA = acuteExcd,
+         chronLimEPA = chronLim,
+         chronExcdEPA = chronExcd)
+
+
+allExceedances = full_join(excdEPA,
+                           excd)
+
+##write_csv(allExceedances,"AllExceedanceInfo.csv")
+
+excd_output = allExceedances %>%
+  filter(chronExcd | chronExcdEPA) %>%
+  select(Date,Site,Hardness,Analyte,Concentration,
+         chronLim,chronLimEPA,
+         acuteLim,acuteLimEPA,
+         chronExcd,chronExcdEPA,
+         acuteExcd,acuteExcdEPA) %>%
+  rename("CO Chronic Limit" = chronLim,
+         "CO Acute Limit" = acuteLim,
+         "EPA Chronic Limit" = chronLimEPA,
+         "EPA Acute Limit" = acuteLimEPA) %>%
+  mutate(Site = factor(Site, levels =  c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "CTC Open Space")))
+  #filter(Site != "Greenbelt Plateau") %>%
+  #filter(Site != "Mulberry")
+  
+##write_csv(excd_output,"Ch3_Exceedances_CO_EPA.csv")
+
+##excd_yrIn = read_csv("Ch3_Exceedances_CO_EPA.csv")
+excd_yrIn = excd_output
+
+excd_yr = excd_yrIn %>%
+  select(-c(chronExcd,chronExcdEPA,acuteExcd,acuteExcdEPA)) %>%
+  pivot_longer(cols = -c(Date,Site,Hardness,Analyte,Concentration),
+               names_to = "LimitType",
+               values_to = "LimitVal") %>%
+  filter(!is.na(LimitVal)) %>%
+  mutate(PercentLimit = round(100*Concentration/LimitVal,2),
+         Date = as.Date(Date,format = "%m/%d/%Y")) %>%
+  filter(PercentLimit >= 100) %>%
+  left_join(regime_type, by="Date") %>%
+  rename(FlowRegime = Type) %>%
+  select(FlowRegime,Date,Site,Analyte,Concentration,LimitType,PercentLimit,LimitVal)
+
+##write_csv(excd_yr, "OneYear_Exceedance.csv")
+
+excd_yrUse = excd_yr %>%
+#excd_yrUse = read_csv("OneYear_Exceedance.csv") %>%
+  mutate(Excd = T) %>%
+  select(Date,Site,Analyte,Excd)
+
+excd_mets = excd_yrUse$Analyte %>% unique()
+excd_metsC = sub("_","Cen_",excd_mets)
+
+sites = c("Greenbelt Plateau",
+          "Superior Associates",
+          "Highway 36",
+          "CTC Open Space")
+
+siteEx = paste0(sites," Exceedance")
+
+long4Vals = wide4 %>%
+  select(Date,Site,all_of(excd_mets),Shp,Colr,Type,Hardness) %>%
+  pivot_longer(cols = -c(Date,Site,Shp,Colr,Type, Hardness),
+               names_to = "Analyte",
+               values_to = "Concentration")
+
+long4Cens = wide4 %>%
+  select(Date,Site,all_of(excd_metsC)) %>%
+  pivot_longer(cols = -c(Date,Site),
+               names_to = "Analyte",
+               values_to = "Censored") %>%
+  mutate(Analyte = sub("Cen","",Analyte),
+         Censored = case_when(Censored == "0" ~ F,
+                              T ~ T))
+
+# Table S7:
+tableS7 = left_join(excd_yr, long4Cens) %>%
+  filter(!Censored) %>%
+  mutate(tvf = sub(".*_","",Analyte)) %>%
+  arrange(Date,tvf,Analyte,Site) %>%
+  select(FlowRegime,Date,Site,LimitType,Analyte,Concentration,LimitVal,PercentLimit)
+
+#write_csv(tableS7,"TableS7.csv")
+
+long4ExAll = long4Vals %>%
+  left_join(long4Cens, by = c("Date","Site","Analyte")) %>%
+  filter(!is.na(Concentration)) %>%
+  left_join(excd_yrUse,by=c("Date","Site","Analyte")) %>%
+  mutate(Excd = case_when(is.na(Excd) ~ F,
+                          T ~ T),
+         Shp = case_when(
+           Shp == 17 ~ 24,
+           Shp == 15 ~ 22,
+           Shp == 18 ~ 23,
+           Shp == 16 ~ 21 )) %>%
+  filter(!is.na(Concentration)) %>%
+  mutate(ExcdName = case_when(Excd ~ paste0(Site," Exceedance"),
+                          T ~ Site),
+         ExcdName = factor(ExcdName, levels = c(sites, siteEx)),
+         Site = factor(Site, levels = sites)) %>%
+  unique()
+
+long4Ex = long4ExAll %>%
+  filter(Analyte %!in% c("Cd_Total","Cd_Filtered","Cr_Filtered")) %>%
+  mutate(Analyte = paste0(
+    sub("_"," ",Analyte)),
+    Type = factor(Type, levels = c("Snowmelt","Baseflow","Rain")),
+    FilCol = case_when(
+      Excd ~ "#FFFFFF",
+      T ~ Colr))
+
+shps = long4Ex %>% arrange(ExcdName) %>% pull(Shp) %>% unique()
+shps2a = rep(shps,2)
+colrs = long4Ex %>% arrange(ExcdName) %>% pull(Colr) %>% unique()
+fils2a = c(colrs,rep("#FFFFFF",4))
+colrs2a = rep(colrs,2)
+
+
+# pltLeg = ggplot() +
+#   geom_point(
+#     data = long4Ex,
+#     aes(x=Date,y=Concentration,
+#         color = ExcdName,
+#         fill = ExcdName,
+#         shape = ExcdName),
+#     size = 6, stroke = 1.5) +
+#   scale_shape_manual(values = shps2a) +
+#       scale_color_manual(values = colrs2a) +
+#       scale_fill_manual(values = fils2a) +
+#   bottomL +
+#   labs(fill = '', shape = '', color = '')
+
+long4ExVal = long4Ex %>% filter(!Censored)
+long4ExCen = long4Ex %>%
+  filter(Censored) %>%
+  mutate(DateDif = case_when(
+      Site == "Greenbelt Plateau" ~ 0.6,
+      Site == "Superior Associates" ~ 0.2,
+      Site == "Highway 36" ~ 0.4,
+      Site == "Dutch Creek Park" ~ 0,
+      Site == "CTC Open Space" ~ 0.8,
+      Site == "Mulberry" ~ 0),
+      barW = case_when(
+        Type == "Baseflow" ~ 3,
+        Type == "Rain" ~ 2,
+        Type == "Snowmelt" ~ 1))
+
+regs = c("Snowmelt","Rain","Baseflow")
+exMetsA = long4ExVal %>% 
+  group_by(Analyte) %>%
+  filter(Excd) %>%
+  mutate(n=n()) %>%
+  arrange(-n) %>%
+  pull(Analyte) %>%
+  unique()
+
+exMetsT = exMetsA[c(1,3,4,6)]
+exMetsF = exMetsA[c(2,5,7,8)]
+
+exMets = exMetsF
+exMets = c("Zn Filtered", "Cu Filtered","Ni Filtered", "Pb Filtered")
+
+exPlts = vector(mode = 'list', length = length(exMets)*length(regs))
+i = 0
+pltScale = tibble(
+  Met = exMets,
+  Max = rep(0,length(exMets))
+)
+for(em in exMets){
+  em2 = sub(" .*","",em)
+  em1 = sub(".* ","",em)
+  for(r in regs){
+      i = i + 1
+    datV = long4ExVal %>%
+      filter(Type == r, Analyte == em)
+    
+    datC = long4ExCen %>%
+      filter(Type == r, Analyte == em)
+    
+    shps2 = datV %>% arrange(ExcdName) %>% select(ExcdName, Shp) %>% unique() %>% pull(Shp)
+    colrs2 = datV %>% arrange(ExcdName) %>% select(ExcdName, Colr) %>% unique() %>% pull(Colr)
+    fils2 = datV %>% arrange(ExcdName) %>% select(ExcdName, FilCol) %>% unique() %>% pull(FilCol)
+    
+    p = ggplot()+
+      geom_point(data = datV,
+                 aes(x=Date, y=Concentration,
+                     shape = ExcdName, color = ExcdName, fill=ExcdName),
+                 size = 4, stroke = 1.5) +
+      scale_shape_manual(values = shps2) +
+      scale_color_manual(values = colrs2) +
+      scale_fill_manual(values = fils2) +
+      geom_segment(data = datC,
+               color = datC$Colr,
+               aes(x=Date+DateDif, xend=Date+DateDif,
+                   y=0,yend=Concentration),
+                   linewidth = 1.5, linetype = 1,
+                   alpha = .5) +
+      bottomL +
+  geom_segment(data = datC,
+               color = datC$Colr,
+               aes(x=Date-barW+DateDif, xend=Date+barW+DateDif,
+                   y=Concentration,yend=Concentration),
+                 linewidth = 1.5, linetype = 1,
+                 alpha = .5) +
+      scale_x_date(date_labels = dateFormat,
+                 date_breaks = '1 month',
+                 limits = as.Date(c("2022-01-01","2022-11-29"))) + 
+    labs(shape = "", color = "", linetype = "", x = "", y = "") +
+    theme(legend.position = 'none',
+          axis.text.x = element_blank(),
+          text = element_text(size=txtSize)) +
+      scale_y_continuous(labels = label_comma())
+    
+    if(r == "Snowmelt"){
+      p = p +
+        labs(y = bquote(.(em1)*" "*.(em2)*" (μg L"^-1*")"))
+    }
+    if(em == exMets[length(exMets)]){
+      p = p +
+        theme(axis.text.x = element_text(angle=45,hjust=1,vjust=1))
+    }
+    if(em == exMets[1]){
+      p = p + labs(title = r) + theme(plot.title = element_text(hjust = 0.5))
+    }
+    
+    maxY = layer_scales(p)$y$range$range[2]
+    pltScale = pltScale %>%
+      mutate(Max = case_when(
+        Met == em & Max < maxY ~ maxY,
+        T ~ Max
+      ))
+    exPlts[[i]] = p
+  }
+}
+
+for(i in 1:length(exPlts)){
+  mv = exMets[ceiling(i/3)]
+  print(mv)
+  maxYr = pltScale %>%
+    filter(Met == mv) %>%
+    pull(Max)
+  
+  exPlts[[i]] = exPlts[[i]] +
+    scale_y_continuous(limits = c(NA,maxYr))
+  
+}
+
+exPlt = plot_grid(plotlist = exPlts, ncol = 3, align = 'v')
+
+# ggsave("Figures/Figure7.jpg",
+#        exPlt,
+#        device = 'jpg',
+#        width = 23,
+#        height = 20)
+
+```
+
+```{r generalized wilcox}
+# Functions used to calculated generalized wilcox value
+#  The output is saved to ./GeneralWilcox_All so this chunk
+#  doesn't need to be run again, but it can be without issue since the save
+#  is commented out
+lineToTri = function(lineDat){
+  cnames = lineDat[,1] %>% unique() %>% pull()
+  rnames = lineDat[,2] %>% unique() %>% pull()
+  nc = rnames %>% length()
+  nr = cnames %>% length()
+  outMatrix = matrix(nrow = nr, ncol = nc)
+  rownames(outMatrix) = rnames
+  colnames(outMatrix) = cnames
+  lineInd = c(1:nrow(lineDat))
+  matrInd = c()
+  for(i in 1:nc){
+    stp = i*nc
+    strt = i*nc - (nc-i)
+    matrInd = c(matrInd,(strt:stp))
+  }
+  for(i in 1:length(lineInd)){
+    outMatrix[matrInd[i]] = lineDat$PValue[i]
+  }
+  outMatrix
+}
+
+pairwise_cendiff_1yr = function(dataIn,pVals = F){
+  out_tib = tibble(Site1 = character(),
+                   Site2 = character(),
+                   PValue = numeric())
+  
+  metal = names(dataIn)[3]
+  metalCen = names(dataIn)[4]
+  
+  sites = dataIn$Site %>% unique()
+  
+  for(i in 1:(length(sites)-1)){
+    for(j in (i+1):length(sites)){
+      s1 = sites[i]
+      s2 = sites[j]
+      dataComp = dataIn %>%
+        filter(Site %in% c(s1,s2)) %>%
+        mutate(Cen = .[[4]] == "0")
+      
+      genWilcR = survdiff(Surv(get(metal),Cen) ~ Site,data=dataComp)#,
+               #TotalVsFiltered == tvd) %>%
+        #select(Site, all_of(c(metal,metalCen)))
+      #if(sum(grepl("G",dataComp[,3])) > 0){next}
+      #obs = dataComp %>% pull(metal)
+      #cenLet = dataComp %>% pull(metalCen)
+      #censored = cenLet != "0"
+      #groups = dataComp %>% pull(Site) %>% factor()
+      #genWilc = cendiff(obs,censored,groups)
+      newRow = tibble(
+        "Site1" = s1, "Site2" = s2, "PValue" = genWilcR$pvalue)
+      out_tib = add_row(out_tib, newRow)
+    }
+  }
+  if(pVals){
+    out_tib
+  } else {
+    tri_mat = lineToTri(out_tib)
+    squ_mat = tri.to.squ(tri_mat)
+    output = multcompLetters(squ_mat,
+                             compare="<=",
+                             threshold = 0.05,
+                             Letters = letters)
+    out_tib2 = tibble(
+      "Site" = output$Letters %>% names(),
+      "Vals" = output$Letters %>% as.character()) %>%
+      pivot_wider(names_from = Site, values_from = Vals)
+    
+    out_tib2
+  }
+}
+
+# Needs different logic for right censored
+pairwise_cendiff_1yr_right = function(dataIn,pVals = F){
+  out_tib = tibble(Site1 = character(),
+                   Site2 = character(),
+                   PValue = numeric())
+  
+  metal = names(dataIn)[3]
+  metalCen = names(dataIn)[4]
+  
+  sites = dataIn$Site %>% unique()
+  
+  for(i in 1:(length(sites)-1)){
+    for(j in (i+1):length(sites)){
+      s1 = sites[i]
+      s2 = sites[j]
+      dataComp = dataIn %>%
+        filter(Site %in% c(s1,s2))#,
+               #TotalVsFiltered == tvd) %>%
+        #select(Site, all_of(c(metal,metalCen)))
+      #if(sum(grepl("G",dataComp[,3])) > 0){next}
+      obs = dataComp %>% pull(metal)
+      cenLet = dataComp %>% pull(metalCen)
+      censored = cenLet != "0"
+      groups = dataComp %>% pull(Site) %>% factor()
+      genWilc = cendiff(obs,censored,groups)
+      newRow = tibble(
+        "Site1" = s1, "Site2" = s2, "PValue" = genWilc$pvalue)
+      out_tib = add_row(out_tib, newRow)
+    }
+  }
+  if(pVals){
+    out_tib
+  } else {
+    tri_mat = lineToTri(out_tib)
+    squ_mat = tri.to.squ(tri_mat)
+    output = multcompLetters(squ_mat,
+                             compare="<=",
+                             threshold = 0.05,
+                             Letters = letters)
+    out_tib2 = tibble(
+      "Site" = output$Letters %>% names(),
+      "Vals" = output$Letters %>% as.character()) %>%
+      pivot_wider(names_from = Site, values_from = Vals)
+    
+    out_tib2
+  }
+}
+names_censors = names(wide4)[grepl("Cen",names(wide4))]
+
+# Save by flow regime (reg) or overall
+genWilc_p_val_reg = tibble(
+  Analyte = character(),
+  Site1 = character(),
+  Site2 = character(),
+  PValue = numeric(),
+  Regime = character()
+)
+
+genWilc_p_val = tibble(
+  Analyte = character(),
+  Site1 = character(),
+  Site2 = character(),
+  PValue = numeric()
+)
+
+genWilc_Cen_Regime = tibble(Analyte = character(),
+                     FlowRegime = character(),
+                     `Greenbelt Plateau` = character(),
+                     `Superior Associates` = character(),
+                     `Highway 36` = character(),
+                     #`Dutch Creek Park` = character(),
+                     `CTC Open Space` = character())#,
+                     #Mulberry = character())
+
+genWilc_Cen = tibble(Analyte = character(),
+                     #FlowRegime = character(),
+                     `Greenbelt Plateau` = character(),
+                     `Superior Associates` = character(),
+                     `Highway 36` = character(),
+                     #`Dutch Creek Park` = character(),
+                     `CTC Open Space` = character())
+
+
+regimes = wide4 %>% pull(Type) %>% unique()
+#tvd = c("Total","Filtered")
+
+# Save just P value or not
+for(pvTru in c(T,F)){
+  
+  for(r in regimes){
+    for(c in names_censors){
+      m = sub("Cen","",c)
+      if(m=="Nitr"){next}
+      dat = wide4 %>%
+        filter(Type == r) %>%
+        select(Date,Site,all_of(c(m,c))) %>%
+        filter(!is.na(get(m)))
+      ls = dat %>% pull(c)
+      if(dat$Site %>% unique() %>% length() < 2){next}
+      #    if(getPVals){
+      #      if("G" %in% ls){
+      #        newRow = pairwise_pVals_right(dat)
+      #      } else {
+      #        newRow = pairwise_pVals(dat)
+      #      }
+      #      genWilc_p_val = genWilc_p_val %>%
+      #        add_row(newRow)
+      #    } else {
+      if("G" %in% ls){
+        newRow = pairwise_cendiff_1yr_right(dat,pvTru)
+      } else {
+        newRow = pairwise_cendiff_1yr(dat,pvTru)
+      }
+      if(pvTru){
+        newRow = newRow %>%
+          mutate(Analyte = m,
+                 Regime = r) %>%
+          select(Analyte, everything())
+        
+        genWilc_p_val_reg = genWilc_p_val_reg %>%
+          add_row(newRow)
+      } else {
+        genWilc_Cen_Regime = genWilc_Cen_Regime %>%
+          add_row(
+            newRow %>%
+              mutate(Analyte = m, FlowRegime = r))
+        #Analyte = paste0(t,"_",m)
+        #newRow = pairwise_cendiff_1yr(dat)
+        #  genWilc_Cen_Regime = bind_rows(genWilc_Cen_Regime,newRow$Letters)
+        #  genWilc_Cen_Regime$Analyte[nrow(genWilc_Cen_Regime)] = m
+        #  genWilc_Cen_Regime$FlowRegime[nrow(genWilc_Cen_Regime)] = r
+      }
+    }
+  }
+  
+  
+  for(c in names_censors){
+    m = sub("Cen","",c)
+    if(m=="Nitr"){next}
+    dat = wide4 %>%
+      #filter(Type == r) %>%
+      select(Date,Site,all_of(c(m,c))) %>%
+      filter(!is.na(get(m)))
+    ls = dat %>% pull(c)
+    if(dat$Site %>% unique() %>% length() < 2){next}
+    if("G" %in% ls){
+      newRow = pairwise_cendiff_1yr_right(dat,pvTru)
+    } else {
+      #Analyte = paste0(t,"_",m)
+      newRow = pairwise_cendiff_1yr(dat,pvTru)
+    }
+    if(pvTru){
+      newRow = newRow %>%
+        mutate(Analyte = m) %>%
+        select(Analyte, everything())
+      
+      genWilc_p_val = genWilc_p_val %>%
+        add_row(newRow)
+    } else {
+      genWilc_Cen = genWilc_Cen %>%
+        add_row(
+          newRow %>%
+            mutate(Analyte = m))
+      #      genWilc_Cen = bind_rows(genWilc_Cen,newRow$Letters)
+      #      genWilc_Cen$Analyte[nrow(genWilc_Cen)] = m
+      #    genWilc_Cen$FlowRegime[nrow(genWilc_Cen)] = r
+    }
+  }
+  
+}
+
+# Add overall and by regime tibbles together
+genWilc_All = genWilc_Cen_Regime %>%
+  add_row(genWilc_Cen)
+
+genWilc_pVals=genWilc_p_val_reg %>%
+  add_row(genWilc_p_val)
+
+#genWilc_All contains all the data for table S6
+#write_csv(genWilc_All,"GeneralWilcox_All.csv")
+
+```
+
+```{r Manganese plot}
+wilcVals = read_csv("GeneralWilcox_All.csv")
+pltVar = c("MnCen_Total","MnCen_Filtered")
+
+
+# Figure 8 - Set saveImg to TRUE to save the plot locally at 'pth'
+regime_boxplot_many(wide4, pltVar, "Figure8", pth = "./", saveImg = F)
+```
+
+```{r Random Forest}
+#Random forest related functions
+one_forest = function(dataIn = wide4,
+                      depVar = "AvgHBTI",
+                      indeps = c(),
+                      mtry = 0){
+  
+  dat = dataIn %>%
+    filter(!is.na(Total)) %>%
+    select(all_of(c(depVar,indeps))) %>%
+    na.omit()
+  
+  results_df = dat %>%
+    pull(depVar)
+  
+  predictors_df = dat %>%
+    select(all_of(indeps))
+  
+  
+  if(!(is.numeric(results_df))){
+    results_df = factor(results_df)
+  }
+  
+  if(mtry == 0){
+    rf1 = randomForest(results_df ~ ., data = predictors_df)
+  } else {
+    rf1 = randomForest(results_df ~ ., data = predictors_df, mtry = mtry)
+  }
+  #print(depVar)
+  rf1
+}
+
+# Censors data to the highest MRL in the provided set of data
+highCen = function(dataInCen = data,
+                   colNames = NA,
+                   printPerCen = F){
+  if(length(colNames) == 1){
+    if(is.na(colNames)){
+      colNames = names(dataInCen)
+    }
+  }
+  dataHighCen = tibble(.rows = nrow(dataInCen))
+  rowIn = nrow(dataHighCen)
+  # TODO working here
+# Find possible names of censor indication columns
+  for(cN in colNames){
+    cenName = case_when(
+      grepl("_",cN) ~ gsub("_","Cen_",cN),
+      T ~ paste0(cN,"Cen")
+    )
+    if(cenName %in% names(dataInCen)){
+      cenInfo = dataInCen %>%
+        select(all_of(c(cenName,cN)))
+      # Find rows containing censored values
+      cenRows = cenInfo %>% filter(.[[cenName]] %in% c("L","G"))
+      if(nrow(cenRows) == 0){
+        # No censored rows, so save the original data back, just like if no censored vals
+        #print(paste0("Have a censored column for ",cN," and no points are censored."))
+        dataHighCen = dataHighCen %>%
+          bind_cols(dataInCen %>% select(all_of(cN)))
+      } else {
+        cenMax = cenRows %>% pull(cN) %>% max()
+        cenOut = cenInfo %>%
+          mutate({{cN}} := case_when(
+            is.na(get(cN)) ~ NA,
+            get(cN) < cenMax ~ cenMax,
+            T ~ .[[cN]])) %>%
+          select(cN)
+        numCen = cenInfo %>% filter(get(cN) <= cenMax) %>% nrow()
+        #print(paste0("Of the ",rowIn," samples of ",cN," there are ",
+        #             numCen, " <= the max MRL of ",cenMax,"(",round(100*numCen/rowIn,1),"% censored)"))
+        if(printPerCen){
+          print(paste0(cN,": ",round(100*numCen/rowIn,1),"% Censored. MaxMRL: ",cenMax))
+        }
+        dataHighCen = dataHighCen %>%
+          bind_cols(cenOut)
+      }
+    } else {
+      # Just grab the data column since whatever the analyte is can't be censored.
+      #print(paste0("The ",cN," data can't be censored."))
+      dataHighCen = dataHighCen %>%
+        bind_cols(dataInCen %>% select(cN))
+    }
+  }
+  dataHighCen
+}
+
+landUse = c("BurnedStructures","ImperviousPercent",
+           "BurnedWildlandPercent","BurnedUrbanPercent",
+           "BurnedAcres")
+
+names_censors = names(wide4)[grepl("Cen",names(wide4))]
+names_censors_filt = names_censors[grepl("Filtered",names_censors)]
+names_filt = sub("Cen","",names_censors_filt)
+names_censors_tots = names_censors[grepl("Total",names_censors)]
+names_censors_noMet = setdiff(names_censors,
+                              c(names_censors_tots,names_censors_filt))
+
+names_noMet = sub("Cen","",names_censors_noMet)
+noMetSkip = c("Nitr","TDON","Nitrate","Nitrite","TSS",
+              "Phosphate","TDP","Ammonia","Bromide","Alkalinity",
+              "Temp")
+noMetUse = setdiff(names_noMet,noMetSkip)
+
+high_cen = c('Se','Cd','Tl','Cr','Co')
+highC = c(
+  paste0(high_cen,"_Filtered"),
+  paste0(high_cen,"_Total")
+)
+
+filtUse = c(landUse,noMetUse, setdiff(names_filt,highC))
+indepUse = c(filtUse,"Temp","Precip")
+
+# original set generation, don't need to ever redo
+###seeds262 = sample(1:2^12,10)
+###write_csv(as_tibble(seeds262))
+seeds262 = read_csv("RF_Seeds.csv") %>% pull()
+nRepUse = 10
+RFs = vector(mode = 'list',length = nRepUse)
+MSEs = vector(mode = 'list',length = nRepUse)
+VExps = vector(mode = 'list',length = nRepUse)
+impsAll = tibble()
+# Index of the RF to plot in text
+j = 9
+for(i in 1:nRepUse){
+  seedNumHere = seeds262[i]
+  set.seed(seedNumHere)
+  #print(paste0("i : ",i," has seed num ",seedNumHere))
+  indep2wk = c(indepUse[1:32],"Precip2Week")
+  
+  # All these are 100% censored
+  newDrops = c("As_Filtered","Cu_Filtered",
+               # These 3 had one measured below max MRL
+               "Al_Filtered","Fe_Filtered","Pb_Filtered",
+               # This had 3 points below max MRL
+               "Ni_Filtered")#
+  
+  # Replace 100% censored Filtered values with Total values
+  newAdds = setdiff(c(gsub("Filtered","Total",newDrops)),
+                    # Remove As and Cu Totals since they're also 100% censored
+                    c("As_Total","Cu_Total"))
+  
+  # Combine the add and drops from above to have a single list
+  cols25 = setdiff(c("Site","Date","AvgHBTI_Scrapers",indep2wk,"Total",
+                     all_of(newAdds)),
+                   c("Na_Filtered","Na_Total",newDrops))
+  
+  # Usually and underscore means the censored column, but a few of these have '_' in
+  #  the name so have to weed them out for use in censoring at highest MRL
+  cols25_und = grep("_",cols25,value=T)
+  cols25_noUnd = setdiff(cols25,cols25_und)
+  
+  cols25_undCen = gsub("_","Cen_",cols25_und)
+  cols25_noUndCen = paste0(cols25_noUnd,"Cen")
+  
+  allCols = c(cols25,cols25_undCen,cols25_noUndCen)
+  
+  # The data to go into RF, but not yet censored
+  rf_set2_uncen = wide4 %>% select(any_of(allCols)) %>% na.omit()
+  
+  # For every analyte with censored values, change any value below highest MRL
+  #  to the highest MRL.
+  rf_set2 = highCen(dataInCen = rf_set2_uncen,
+                    colNames = cols25)
+
+  # Make the Random Forest, without Na
+  rfLoop25 = one_forest(data=rf_set2, indeps = setdiff(c(newAdds,indep2wk),
+                                                       c("Na_Filtered","Na_Total",
+                                                         "Temp",newDrops)),
+                        depVar = "AvgHBTI_Scrapers")
+  
+  
+  dispName = "Scrapers HBI"
+  mse = round(rfLoop25$mse %>% mean(),2)
+  vExp = round(rfLoop25$rsq %>% mean() * 100, 1)
+  
+  c1 = rfLoop25$importance %>% rownames()
+  c2 = rfLoop25$importance %>% as.numeric()
+  imps = tibble(var = c1, val = c2) %>% arrange(-val)
+  if(nrow(impsAll) == 0){
+    impsAll = imps
+  } else{
+    impsAll = left_join(impsAll,imps, by='var')
+  }
+  nc = ncol(impsAll)
+  names(impsAll)[nc] = paste0("Seed:",seedNumHere)
+
+  #varImpPlot(rfLoop25, main = paste0("Predictors for ",dispName,"\nMSE: ",mse,"\nVariance Explained: ",vExp,"%"))
+  
+  RFs[[i]] = rfLoop25
+  MSEs[[i]] = mse
+  VExps[[i]] = vExp
+
+}
+
+# This function doesn't save off to variable as normal. So running this will
+#  display the plot and can be saved off independently.
+# Figure 9
+varImpPlot(RFs[[j]], main = paste0("Predictors for ",dispName,"\nMSE: ",
+                                   MSEs[[j]],"\nVariance Explained: ",
+                                   VExps[[j]],"%"))
+
+# Percents sampled for table S3:
+unused = highCen(dataInCen = rf_set2_uncen,
+                 colNames = cols25,
+                 T)
+
+seedNums = names(impsAll)[2:11] %>%
+  str_replace_all("Seed:","")
+
+RF_Summary = tibble(rank = as.character(c(1:nrow(impsAll))))
+for(i in 2:ncol(impsAll)){
+  seedX = impsAll %>% select(all_of(c(1,i))) %>%
+    arrange(-.[[2]]) %>%
+    mutate(rank = row_number(),
+           var = paste0(var,":",round(.[[2]],3)))
+  names(seedX) = c(names(seedX)[2],'val','rank')
+  seedX = seedX %>% select(c(1,3)) %>% mutate(rank = as.character(rank))
+  RF_Summary = left_join(RF_Summary, seedX, by='rank') 
+}
+
+varExpRow = tibble(vals = c("Var Expl (%)",VExps %>% as.numeric()),
+                   nams = c(1:11)) %>%
+  pivot_wider(names_from = "nams", values_from = "vals")
+
+names(varExpRow) = names(RF_Summary)
+
+mseRow = tibble(vals = c("MSE",MSEs %>% as.numeric()),
+                nams = c(1:11)) %>%
+  pivot_wider(names_from = 'nams', values_from = 'vals')
+
+names(mseRow) = names(RF_Summary)
+
+RF_SummaryV = bind_rows(mseRow,varExpRow) %>%
+  bind_rows(RF_Summary) %>%
+  select(rank,`Seed:1827`,everything())
+
+# Table S8
+#write_csv(RF_SummaryV,"RF_10Runs.csv")
+```
+
+```{r bug summary table}
+bugColNames = c("numPerSqM","Shannon Diversity Index","Species_Richness","Evenness","AvgHBI")
+bugSum = wide4 %>% 
+  filter(!is.na(Species_Richness)) %>%
+  rename(AvgHBI = AvgHBTI) %>%
+  mutate(numPerSqM = round(Total * 3.28084)) %>%
+  select(Site,Date,all_of(bugColNames))
+
+dts = bugSum$Date %>% unique()
+
+bugSumWide = bugSum %>%
+  pivot_wider(names_from = Date,
+              values_from = all_of(bugColNames)) %>%
+  mutate(Site = factor(Site, levels = bugSites)) %>%
+  arrange(Site)
+
+# bugSumWide gets rearranged for table S4
+```
+
+```{r turn wide data to long for censored calculations later}
+# Probably already defined, but again just in case
+names_censors = names(wide4)[grepl("Cen",names(wide4))]
+names_censors_filt = names_censors[grepl("Filtered",names_censors)]
+names_filt = sub("Cen","",names_censors_filt)
+names_censors_tots = names_censors[grepl("Total",names_censors)]
+names_tots = sub("Cen","",names_censors_tots)
+names_censors_noMet = setdiff(names_censors,
+                              c(names_censors_tots,names_censors_filt))
+names_noMet = sub("Cen","",names_censors_noMet)
+
+names_met = c(names_filt, names_tots)
+
+names_bugs = names(wide4)[c(3:28,178,179)]
+
+names_land = names(wide4)[157:172]
+
+anyCens = wide4 %>%
+  mutate(across(all_of(names_censors),as.character)) %>%
+  ungroup() %>%
+  select(all_of(names_censors)) %>%
+  pivot_longer(cols = everything()) %>%
+  filter(value != "0") %>%
+  pull(name) %>%
+  unique()
+
+withCensored = sub("Cen","",anyCens)
+
+noCensoredValues = setdiff(c(names_met,names_noMet),
+                          withCensored)
+
+
+rightCens = wide4 %>%
+  mutate(across(all_of(names_censors),as.character)) %>%
+  ungroup() %>% 
+  select(all_of(names_censors))  %>%
+  pivot_longer(cols=everything()) %>%
+  filter(value == "G") %>% 
+  unique() %>%
+  pull(name)
+
+
+bothCens = wide4 %>%
+  mutate(across(all_of(names_censors),as.character)) %>%
+  ungroup() %>% 
+  select(all_of(names_censors))  %>% 
+  pivot_longer(cols=everything()) %>%
+  filter(value == "L") %>% 
+  unique() %>%
+  filter(name %in% rightCens)
+
+#No value is both right and left censored
+
+names_noMet = setdiff(names_noMet,"Hardness")
+
+long_Vals = wide4 %>% 
+  select("Date","Site","Type",all_of(c(names_met,names_noMet))) %>%
+  pivot_longer(cols = -c("Date","Site","Type"),
+               names_to = "Analyte",
+               values_to = "Concentration")
+
+long_Cen = wide4 %>% 
+  mutate(across(all_of(names_censors),as.character)) %>%
+  select("Date","Site",all_of(c(names_met_cen,names_noMet_cen))) %>%
+  pivot_longer(cols = -c("Date","Site"),
+               names_to = "AnalyteCen",
+               values_to = "Censored") %>%
+  mutate(Analyte = sub("Cen","",AnalyteCen),
+         Censored = case_when(
+           Censored == "0" ~ "FALSE",
+           Censored == "L" ~ "LessThan",
+           Censored == "G" ~ "GreaterThan")) %>%
+  select(-AnalyteCen)
+
+long_ValCen = full_join(long_Vals,long_Cen) %>%
+  filter(!is.na(Concentration)) 
+
+# Save off ot read in other places if needed
+#write_csv(long_ValCen,"LongData.csv")
+```
+
+```{r summary statistics, warning = F}
+#long_dataIn = read_csv("LongData.csv")
+long_dataIn = long_ValCen
+# Calculating summary statistics using different criteria based on the percentage
+#  of values that are censored. 
+names_basic = c("pH","Alkalinity","Conductivity","Temp")
+names_nutr = c("NPOC","TDN","TDP","Ammonia","Nitrate","Phosphate")
+names_anion = c("Bromide","Fluoride","Chloride","Sulfate")
+names_turb = c("TSS","Turbidity")
+stat_order = c(
+  names_tots %>% sort(),
+  names_filt %>% sort(),
+  names_basic,
+  names_nutr,
+  names_anion,
+  names_turb
+)
+roundSciStr = function(x=x){
+  if(x<10){
+    x = round(x,2)
+  } else if (x<100){
+    x = round(x,1)
+  } else {
+    x = round(x,0)
+  }
+  if(x>10000){
+    x = format(x,big.mark=",")
+  }
+  as.character(x)
+}
+roundSci = function(x=x){
+  if(x<10){
+    x = round(x,2)
+  } else if (x<100){
+    x = round(x,1)
+  } else {
+    x = round(x)
+  }
+  x
+}
+
+right_cen = tibble(
+ "Site" = character(),
+ "Analyte" = character())
+both_cen = tibble(
+ "Site" = character(),
+ "Analyte" = character())
+
+long_data = long_dataIn %>%
+  filter(!is.na(Concentration)) %>%
+  rename(CenString = Censored) %>%
+  mutate(Censored = CenString != "FALSE") 
+
+# Analytes not used in summary statistics
+drop_analytes = c("Nitr","Na_Filtered","Na_Total")
+
+stat_sites = long_data$Site %>% unique()
+stat_analytes = long_data$Analyte %>% unique()
+stat_regimes = long_data$Type %>% unique
+
+stat_analytes = setdiff(stat_analytes,
+                        drop_analytes)
+
+for(r in stat_regimes){
+  for(s in stat_sites){
+    for(a in stat_analytes){
+      stat_dat = long_data %>%
+        filter(Site == s, Analyte == a, Type == r)
+      if(stat_dat %>% nrow() == 0){
+        print(paste0("No data for ",a," at ",s,"."))
+        next
+      }
+      if(stat_dat %>% pull(CenString) %>% unique() %>% length() > 2){
+        print(paste0("Have multiple censor directions for ",
+                     a," at ",s,". Look at manualy"))
+        both_cen = both_cen %>% 
+          add_row(tibble("Site" = s, "Analyte" = a))
+        next
+      }
+      if(stat_dat %>% filter(CenString == "GreaterThan") %>% nrow() > 0){
+        print(paste0("Have right censored data for ",
+                     a," at ",s,". Look at it manually."))
+        right_cen = right_cen %>%
+          add_row(tibble("Site" = s, "Analyte" = a))
+        next
+      }
+      
+      maxAll = stat_dat %>% pull(Concentration) %>% max()
+      minAll = stat_dat %>% pull(Concentration) %>% min()
+
+      # Used to show what the min is below if min is below MRL
+      maxMRL = stat_dat %>% filter(Censored) %>% pull(Concentration) %>% max()
+      
+      num = nrow(stat_dat)
+      numCen = stat_dat %>% pull(Censored) %>% sum()
+      perCen = numCen/num * 100
+      perMeas = 100-perCen
+      perMeasStr = paste0(round(perMeas,1),"%")
+      # This returns K-M, then ROS, the MLE
+      if(perMeas>0){
+        tryCatch({
+          medStats = censtats(stat_dat$Concentration,stat_dat$Censored)
+        },
+        error = function(e){
+          medStats = ""
+        })
+        maxMeas = stat_dat %>% filter(!Censored) %>% pull(Concentration) %>% max()
+        maxDate = stat_dat %>% filter(!Censored) %>%
+          slice_max(Concentration) %>% pull(Date) %>%
+          as.character()
+        minMeas = stat_dat %>% filter(!Censored) %>% pull(Concentration) %>% min()
+        minDate = stat_dat %>% filter(!Censored) %>%
+          slice_min(Concentration) %>% pull(Date) %>%
+          as.character()
+        #if(maxMeas == maxAll){
+        maxVal = maxMeas %>% roundSciStr() # Do this as the maximum measured
+        #} else {
+        #  maxVal = "<MRL"
+        #}
+        
+        if(minMeas == minAll){
+          minVal = minMeas %>% roundSciStr()
+        } else {
+          minVal = paste0("<",maxMRL)
+#          minVal = "<MRL"
+        }
+        
+      } else {
+        maxVal = paste0("<",maxMRL)
+        minVal = maxVal
+#        maxVal = "<MRL"
+#        minVal = "<MRL"
+      }
+      
+      if(perMeas == 100){
+        # No censored values, just calculate meian
+        medVal = median(stat_dat$Concentration) %>% roundSciStr()
+      } else if(perMeas > 50){
+        # < 50 % censored, use Kaplan-Meier which is the 1st row of median
+        medVal = medStats$median[1] %>% roundSciStr()
+      } else if(perMeas >= 20){
+        # 50 - 80% censored, use ROS which is the 2nd row of median
+        medVal = medStats$median[2] %>% roundSciStr()
+      } else {
+        # > 80% censored, report percent not censored
+        medVal = perMeasStr
+      }
+      
+      if(grepl("<",minVal)){
+#      if(minVal == "<MRL"){
+        minDate = "NA"
+      }
+      if(grepl("<",maxVal)){
+#      if(maxVal == "<MRL"){
+        maxDate = "NA"
+      }
+      
+      newRow = tibble(
+        "Site" = s, "Analyte" = a, 
+        "Min" = minVal, "Median" = medVal, "Max" = maxVal,
+        "n" = num, "perMeas" = perMeasStr,
+        "MinDate" = minDate, "MaxDate" = maxDate)
+      
+      if(which(a==stat_analytes) == 1){
+        statsTib = newRow
+      } else {
+        statsTib = statsTib %>% add_row(newRow)
+      }
+      
+    }
+    fn = paste0(gsub(" ","",s),"_",r,"_Stats.csv")
+    outTib = statsTib %>%
+      filter(!is.na(Analyte)) %>%
+      select(-Site)
+    newnames = paste0(names(outTib)," ",gsub(" ","",s)," ",r)
+    names(outTib) = newnames
+    
+    #write_csv(outTib,paste0("./",fn))
+    
+    fullTib = statsTib %>%
+      mutate(FlowRegime = r) %>%
+      select(Site,FlowRegime,everything())
+    
+    if(which(s==stat_sites) +
+       which(r==stat_regimes) == 2){
+      stats_long_all = fullTib
+    } else {
+      stats_long_all = stats_long_all %>%
+        add_row(fullTib)
+    }
+  }
+}
+
+statsTibSave = stats_long_all %>%
+  select(-c(MinDate,MaxDate)) %>%
+  unique() %>%
+  mutate(Analyte = factor(Analyte, levels = stat_order),
+         Site = factor(Site, levels = siteOrder)) %>%
+  filter(!is.na(Analyte)) %>%
+  arrange(Site,Analyte) %>%
+  rename("% Measured" = perMeas)
+
+statsTibWide = statsTibSave %>%
+  mutate(Ste = case_when(
+    Site == "Greenbelt Plateau" ~ "GBP",
+    Site == "Superior Associates" ~ "SA",
+    Site == "Highway 36" ~ "H36",
+    Site == "Dutch Creek Park" ~ "DCP",
+    Site == "CTC Open Space" ~ "CTC",
+    Site == "Mulberry" ~ "MB")) %>%
+  select(-Site) %>%
+  pivot_wider(names_from = Ste, values_from = -c(Ste,FlowRegime,Analyte)) %>%
+  mutate(Analyte = factor(Analyte, levels = c(
+    "Temp","pH","Conductivity","Alkalinity","Turbidity",
+    "TDN","TDP","NPOC", "Ammonia",
+    "Nitrate",
+    "Chloride", "Sulfate",
+    all_of(c(names_filt,names_tots))))) %>%
+  filter(!is.na(Analyte)) %>%
+  arrange(FlowRegime,Analyte) %>%
+  select(
+    FlowRegime,
+    Analyte,
+    contains("GBP"),
+    contains("SA"),
+    contains("H36"),
+    contains("CTC"))
+    # grep("GBP",names(statsTibWide)),
+    # grep("SA",names(statsTibWide)),
+    # grep("H36",names(statsTibWide)),
+    # grep("DCP",names(statsTibWide)),
+    # grep("CTC",names(statsTibWide)),
+    # grep("MB",names(statsTibWide)))
+
+
+maxGreaterThans = long_dataIn %>% filter(Censored == "GreaterThan",
+                                         Analyte %in% stat_analytes)
+#statsTibWide
+#maxGreaterThans
+#  statsTibWide fills out most of table S5, with right censored values from
+#   maxGreaterThans used to set the maximum values if MRL higher than max measured
+```
+
+```{r SI boxplots}
+pltVar2 = c("Temp", "pH","Turbidity", "Conductivity", "Alkalinity","Hardness")
+s1Plts = vector(mode = 'list',length = length(pltVar2))
+for(i in 1:length(pltVar2)){
+  yLab = pltVar2[i]
+  Colrs4 =  c("#999999","#479f74","#56b4e9","#3172b2")
+  
+  pltDat = wide4 %>%
+    select(Date,Site,all_of(yLab)) %>%
+    mutate(Val = get(yLab)) %>%
+    mutate(Site = factor(Site, levels = c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "CTC Open Space")))
+  
+  pltSumry = pltDat %>%
+    group_by(Site) %>%
+    summarise(n = n(),
+              min = min(get(yLab),na.rm=T),
+              max = max(get(yLab),na.rm=T)) %>%
+    ungroup() %>%
+    mutate(minAll = min(min),
+              maxAll = max(max))
+
+  pltTxt = wilcVals %>% 
+    filter(is.na(FlowRegime)) %>%
+    filter(Analyte == yLab) %>%
+    select(-c(Analyte,FlowRegime)) %>%
+    pivot_longer(cols = everything(), names_to = 'Site', values_to = 'Let') %>%
+    left_join(pltSumry) %>%
+    mutate(yVal = 0-maxAll/10)
+  
+  plt = ggplot() +
+    geom_boxplot(data = pltDat,
+                 aes(x=Site, group = Site, fill = Site,
+                     y = Val)) +
+    bottomL +
+    theme(axis.text.x = element_blank()) +
+    labs(x = '', fill = '') +
+    scale_fill_manual(values = Colrs4)
+  
+  if(yLab == "Conductivity"){
+    plt = plt + labs(y=bquote(.(yLab)*" (μS cm"^-1*")"))
+  } else if(yLab == "Temp"){
+    plt = plt + labs(y = "Temp (°C)")
+  } else if(yLab %in% c("Alkalinity","Hardness")){
+    plt = plt+ labs(y=bquote(.(yLab)*" (mg L"^-1*" as CaCO"[3]*")"))
+  } else if(yLab == "Turbidity"){
+    plt = plt + labs(y = "Turbidity (NTU)")
+  } else if(yLab == 'pH'){
+    plt = plt + labs(y = 'pH')
+  }
+  
+  if(yLab == 'pH'){
+    plt = plt + 
+      geom_text(data = pltTxt,
+                aes(x = c(1:4), y = c(6,6,6,6), label = Let), size = 6) +
+      geom_text(data = pltTxt,
+                aes(x = c(1:4), y = c(5.5, 5.5, 5.5, 5.5), label = n),size = 6)
+  } else {
+    plt = plt + 
+      geom_text(data = pltTxt,
+                aes(x = c(1:4), y = yVal, label = Let),size = 6) + 
+      geom_text(data = pltTxt,
+                aes(x = c(1:4), y = yVal*1.6, label = n),size = 6)
+  }
+  s1Plts[[i]] = plt + theme(legend.position = 'none')
+}
+# Figure S2 for the SI
+fig_s2 = plot_grid(plotlist = s1Plts,align = 'vh',ncol=3)
+
+
+pltVar3 = c("NPOC", "TDN","Ammonia", "TDP")
+s2Plts = vector(mode = 'list',length = length(pltVar3))
+for(i in 1:length(pltVar3)){
+  yLab = pltVar3[i]
+  Colrs4 =  c("#999999","#479f74","#56b4e9","#3172b2")
+  
+  pltDat = wide4 %>%
+    select(Date,Site,all_of(yLab)) %>%
+    mutate(Val = get(yLab)) %>%
+    mutate(Site = factor(Site, levels = c("Greenbelt Plateau",
+                                          "Superior Associates",
+                                          "Highway 36",
+                                          "CTC Open Space")))
+  
+  pltSumry = pltDat %>%
+    group_by(Site) %>%
+    summarise(n = n(),
+              min = min(get(yLab),na.rm=T),
+              max = max(get(yLab),na.rm=T)) %>%
+    ungroup() %>%
+    mutate(minAll = min(min),
+              maxAll = max(max))
+
+  pltTxt = wilcVals %>% 
+    filter(is.na(FlowRegime)) %>%
+    filter(Analyte == yLab) %>%
+    select(-c(Analyte,FlowRegime)) %>%
+    pivot_longer(cols = everything(), names_to = 'Site', values_to = 'Let') %>%
+    left_join(pltSumry) %>%
+    mutate(yVal = 0-maxAll/15)
+  
+  plt = ggplot() +
+    geom_boxplot(data = pltDat,
+                 aes(x=Site, group = Site, fill = Site,
+                     y = Val)) +
+    bottomL +
+    theme(axis.text.x = element_blank()) +
+    labs(x = '', fill = '') +
+    scale_fill_manual(values = Colrs4)
+  
+  if(yLab == "NPOC"){
+    yLabUse = "DOC"
+  }else if(yLab == "TDP"){
+    yLabUse = "SRP"
+  }else if(yLab == "Ammonia"){
+    yLabUse = "Ammonium"
+  } else {
+    yLabUse = yLab
+  }
+
+  plt = plt + labs(y = bquote(.(yLabUse)*" (μg L"^-1*")"))
+  
+  
+  
+    plt = plt + 
+      geom_text(data = pltTxt,
+                aes(x = c(1:4), y = yVal*0.8, label = Let),size = 6) + 
+      geom_text(data = pltTxt,
+                aes(x = c(1:4), y = yVal*1.6, label = n),size = 6)
+  
+  s2Plts[[i]] = plt + theme(legend.position = 'none')
+}
+
+# Figure S3 from SI
+fig_s3 = plot_grid(plotlist = s2Plts,align = 'vh',ncol=2)
+
+
+```

@@ -1,0 +1,333 @@
+Date,Site,Benthic,Count,HBI,EPT,Order,FFG,Common Name
+3/12/2022,Greenbelt Plateau,Amphipoda,42,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+3/12/2022,Greenbelt Plateau,White Chironomidae,20,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+3/12/2022,Greenbelt Plateau,Caecidotea,5,8,FALSE,Isopoda,Gathering Collectors,Waterslater
+3/12/2022,Greenbelt Plateau,Chloroperlidae,2,1,TRUE,Plecoptera,Predators,Green Stoneflies
+3/12/2022,Greenbelt Plateau,Hydropsychidae,2,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+3/12/2022,Greenbelt Plateau,Leptophlebia,1,2,TRUE,Ephemeroptera,Scrapers,Prong-gilled mayflies
+3/12/2022,Greenbelt Plateau,Tricladida,1,4,FALSE,Tricladida,Collectors,Flatworms
+3/12/2022,Greenbelt Plateau,Physidae,1,7,FALSE,Gastropoda,Scrapers,Bladder Snail
+3/12/2022,Highway 36,Tipulidae,2,7,FALSE,Diptera,Shredders,Crane fly
+3/12/2022,Highway 36,Amphipoda,7,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+3/12/2022,Highway 36,Baetidae,1,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+3/12/2022,Highway 36,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+3/12/2022,Highway 36,White Chironomidae,8,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+3/12/2022,Highway 36,Nematoda,1,NA,FALSE,-,Predators,Roundworms
+3/12/2022,CTC Open Space,Calopterygidae,1,5,FALSE,Odonata,Predators,Broad-winged damselfly
+3/12/2022,CTC Open Space,Tipulidae,4,7,FALSE,Diptera,Shredders,Crane fly
+3/12/2022,CTC Open Space,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+3/12/2022,CTC Open Space,Baetis,2,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+3/12/2022,CTC Open Space,Baetidae,24,5,TRUE,Ephemeroptera,Scrapers,Mayfly
+3/12/2022,CTC Open Space,Simuliidae,18,6,FALSE,Diptera,Filtering Collectors,Blackfly
+3/12/2022,CTC Open Space,Hydropsychidae,3,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+3/12/2022,CTC Open Space,Limnephilidae,1,4,TRUE,Trichoptera,Shredders,Northern casemaker caddisflies
+3/12/2022,CTC Open Space,Amphipoda,10,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+3/12/2022,CTC Open Space,White Chironomidae,9,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+3/12/2022,CTC Open Space,Tricladida,11,4,FALSE,Tricladida,Collectors,Flatworms
+3/12/2022,CTC Open Space,Trombidiformes,2,NA,FALSE,Trombidiformes,Predators,Water Mites
+3/12/2022,CTC Open Space,Oligochaeta,3,NA,FALSE,-,Detrivores,Earth Worms
+4/3/2022,Greenbelt Plateau,Chloroperlidae,3,1,TRUE,Plecoptera,Predators,Green Stoneflies
+4/3/2022,Greenbelt Plateau,Red Chironomidae,1,10,FALSE,Diptera,Multiple,Midge/Chironomid
+4/3/2022,Greenbelt Plateau,Amphipoda,9,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+4/3/2022,Greenbelt Plateau,Annelida,5,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/3/2022,Greenbelt Plateau,Tricladida,5,4,FALSE,Tricladida,Collectors,Flatworms
+4/3/2022,Greenbelt Plateau,White Chironomidae,12,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/3/2022,Greenbelt Plateau,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Mayfly
+4/3/2022,Greenbelt Plateau,Simuliidae,1,6,FALSE,Diptera,Filtering Collectors,Blackfly
+4/3/2022,Greenbelt Plateau,Decapoda,1,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+4/3/2022,Greenbelt Plateau,Isopoda,1,8,FALSE,Isopoda,Gathering Collectors,Isopod
+4/3/2022,Greenbelt Plateau,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/3/2022,Superior Associates,White Chironomidae,84,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/3/2022,Superior Associates,White Chironomidae,1,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/3/2022,Superior Associates,Simuliidae,55,6,FALSE,Diptera,Filtering Collectors,Blackfly
+4/3/2022,Superior Associates,Annelida,1,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/3/2022,Superior Associates,Nematoda,1,NA,FALSE,-,Predators,Roundworms
+4/3/2022,Highway 36,Trombidiformes,9,NA,FALSE,Trombidiformes,Predators,Water Mites
+4/3/2022,Highway 36,Amphipoda,4,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+4/3/2022,Highway 36,White Chironomidae,139,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/3/2022,Highway 36,Hydropsychidae,12,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/3/2022,Highway 36,Hydropsychidae,10,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/3/2022,Highway 36,Tricorythodes,2,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+4/3/2022,Highway 36,Simuliidae,1,6,FALSE,Diptera,Filtering Collectors,Blackfly
+4/3/2022,Highway 36,Decapoda,2,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+4/3/2022,Highway 36,Annelida,5,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/3/2022,CTC Open Space,Simuliidae,92,6,FALSE,Diptera,Filtering Collectors,Blackfly
+4/3/2022,CTC Open Space,Coenagrionidae,2,9,FALSE,Odonata,Predators,Narrow-winged damselfly
+4/3/2022,CTC Open Space,White Chironomidae,41,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/3/2022,CTC Open Space,Baetis,28,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+4/3/2022,CTC Open Space,Baetis,41,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+4/3/2022,CTC Open Space,Tricorythodes,3,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+4/3/2022,CTC Open Space,Tipulidae,16,7,FALSE,Diptera,Shredders,Crane fly
+4/3/2022,CTC Open Space,Tricladida,34,4,FALSE,Tricladida,Collectors,Flatworms
+4/3/2022,CTC Open Space,Hydropsychidae,3,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/3/2022,CTC Open Space,Limnephilidae,2,4,TRUE,Trichoptera,Shredders,Northern casemaker caddisflies
+4/3/2022,CTC Open Space,Annelida,17,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/3/2022,CTC Open Space,Trombidiformes,2,NA,FALSE,Trombidiformes,Predators,Water Mites
+4/3/2022,CTC Open Space,Amphipoda,13,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+4/3/2022,CTC Open Space,Gastropoda,2,7,FALSE,-,Scrapers,Snail
+4/16/2022,Greenbelt Plateau,Chloroperlidae,2,1,TRUE,Plecoptera,Predators,Green Stoneflies
+4/16/2022,Greenbelt Plateau,Argia,1,7,FALSE,Odonata,Predators,Dancers
+4/16/2022,Greenbelt Plateau,Hydropsychidae,3,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/16/2022,Greenbelt Plateau,Baetis,2,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+4/16/2022,Greenbelt Plateau,White Chironomidae,10,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/16/2022,Greenbelt Plateau,Amphipoda,33,4,FALSE,Amphipoda,Gathering Collectors,Amphipod
+4/16/2022,Greenbelt Plateau,Simuliidae,155,6,FALSE,Diptera,Filtering Collectors,Blackfly
+4/16/2022,Greenbelt Plateau,Annelida,2,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/16/2022,Superior Associates,Simuliidae,34,6,FALSE,Diptera,Filtering Collectors,Blackfly
+4/16/2022,Superior Associates,White Chironomidae,39,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/16/2022,Superior Associates,Nematoda,5,NA,FALSE,-,Predators,Roundworms
+4/16/2022,Superior Associates,Tricladida,1,4,FALSE,Tricladida,Collectors,Flatworms
+4/16/2022,Superior Associates,Chloroperlidae,1,1,TRUE,Plecoptera,Predators,Green Stoneflies
+4/16/2022,Highway 36,White Chironomidae,331,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/16/2022,Highway 36,Hydropsychidae,3,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/16/2022,Highway 36,Hydropsychidae,4,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/16/2022,Highway 36,Annelida,2,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/16/2022,Highway 36,Nematoda,3,NA,FALSE,-,Predators,Roundworms
+4/16/2022,Highway 36,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+4/16/2022,Highway 36,Trombidiformes,2,NA,FALSE,Trombidiformes,Predators,Water Mites
+4/16/2022,CTC Open Space,White Chironomidae,175,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+4/16/2022,CTC Open Space,Baetis,12,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+4/16/2022,CTC Open Space,Tricorythodes,9,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+4/16/2022,CTC Open Space,Coenagrionidae,2,9,FALSE,Odonata,Predators,Narrow-winged damselfly
+4/16/2022,CTC Open Space,Calopterygidae,1,5,FALSE,Odonata,Predators,Broad-winged damselfly
+4/16/2022,CTC Open Space,Crangonyx,6,4,FALSE,Amphipoda,Gathering Collectors,Scud
+4/16/2022,CTC Open Space,Hyalella,5,8,FALSE,Amphipoda,Scrapers,Scud
+4/16/2022,CTC Open Space,Tipulidae,1,7,FALSE,Diptera,Shredders,Crane fly
+4/16/2022,CTC Open Space,Hydropsychidae,5,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/16/2022,CTC Open Space,Tricladida,22,4,FALSE,Tricladida,Collectors,Flatworms
+4/16/2022,CTC Open Space,Baetis,6,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+4/16/2022,CTC Open Space,Annelida,17,NA,FALSE,Annelida,Detritivore,Segmented worms
+4/16/2022,CTC Open Space,Trombidiformes,3,NA,FALSE,Trombidiformes,Predators,Water Mites
+4/16/2022,CTC Open Space,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+4/16/2022,CTC Open Space,Red Chironomidae,3,10,FALSE,Diptera,Multiple,Midge/Chironomid
+4/16/2022,CTC Open Space,Limnephilidae,2,4,TRUE,Trichoptera,Shredders,Northern casemaker caddisflies
+5/18/2022,Greenbelt Plateau,Annelida,3,NA,FALSE,Annelida,Detritivore,Segmented worms
+5/18/2022,Greenbelt Plateau,Chloroperlidae,17,1,TRUE,Plecoptera,Predators,Green Stoneflies
+5/18/2022,Greenbelt Plateau,Crangonyx,8,4,FALSE,Amphipoda,Gathering Collectors,Scud
+5/18/2022,Greenbelt Plateau,Hyalella,1,8,FALSE,Amphipoda,Scrapers,Scud
+5/18/2022,Greenbelt Plateau,Simuliidae,65,6,FALSE,Diptera,Filtering Collectors,Blackfly
+5/18/2022,Greenbelt Plateau,Nematoda,1,NA,FALSE,-,Predators,Roundworms
+5/18/2022,Greenbelt Plateau,Tricladida,1,4,FALSE,Tricladida,Collectors,Flatworms
+5/18/2022,Greenbelt Plateau,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+5/18/2022,Greenbelt Plateau,Baetis,17,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+5/18/2022,Greenbelt Plateau,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+5/18/2022,Greenbelt Plateau,Hydropsychidae,2,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+5/18/2022,Greenbelt Plateau,White Chironomidae,27,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+5/18/2022,Superior Associates,Dytiscidae,3,NA,FALSE,Coleoptera,Predators,Predacious diving beetles
+5/18/2022,Superior Associates,Cinygmula,1,4,TRUE,Ephemeroptera,Scrapers,Flat-headed mayflies
+5/18/2022,Superior Associates,Heptageniidae,8,4,TRUE,Ephemeroptera,Scrapers,Flat-headed mayflies
+5/18/2022,Superior Associates,Tricladida,9,4,FALSE,Tricladida,Collectors,Flatworms
+5/18/2022,Superior Associates,Annelida,6,NA,FALSE,Annelida,Detritivore,Segmented worms
+5/18/2022,Superior Associates,Crangonyx,4,4,FALSE,Amphipoda,Gathering Collectors,Scud
+5/18/2022,Superior Associates,White Chironomidae,7,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+5/18/2022,Superior Associates,Simuliidae,30,6,FALSE,Diptera,Filtering Collectors,Blackfly
+5/18/2022,Highway 36,Tricorythodes,2,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+5/18/2022,Highway 36,Dytiscidae,3,NA,FALSE,Coleoptera,Predators,Predacious diving beetles
+5/18/2022,Highway 36,Hydropsychidae,2,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+5/18/2022,Highway 36,Nematoda,6,NA,FALSE,-,Predators,Roundworms
+5/18/2022,Highway 36,Trombidiformes,1,NA,FALSE,Trombidiformes,Predators,Water Mites
+5/18/2022,Highway 36,Red Chironomidae,60,10,FALSE,Diptera,Multiple,Midge/Chironomid
+5/18/2022,Highway 36,Annelida,3,NA,FALSE,Annelida,Detritivore,Segmented worms
+5/18/2022,Highway 36,White Chironomidae,63,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+5/18/2022,Highway 36,Baetis,6,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+5/18/2022,Highway 36,Simuliidae,20,6,FALSE,Diptera,Filtering Collectors,Blackfly
+5/18/2022,Highway 36,Crangonyx,17,4,FALSE,Amphipoda,Gathering Collectors,Scud
+5/18/2022,Highway 36,Hyalella,4,8,FALSE,Amphipoda,Scrapers,Scud
+5/18/2022,CTC Open Space,Tricorythodes,9,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+5/18/2022,CTC Open Space,Tricladida,2,4,FALSE,Tricladida,Collectors,Flatworms
+5/18/2022,CTC Open Space,Limnephilidae,1,4,TRUE,Trichoptera,Shredders,Northern casemaker caddisflies
+5/18/2022,CTC Open Space,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+5/18/2022,CTC Open Space,Coenagrionidae,2,9,FALSE,Odonata,Predators,Narrow-winged damselfly
+5/18/2022,CTC Open Space,Tipulidae,3,7,FALSE,Diptera,Shredders,Crane fly
+5/18/2022,CTC Open Space,Decapoda,3,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+5/18/2022,CTC Open Space,Annelida,5,NA,FALSE,Annelida,Detritivore,Segmented worms
+5/18/2022,CTC Open Space,Simuliidae,4,6,FALSE,Diptera,Filtering Collectors,Blackfly
+5/18/2022,CTC Open Space,White Chironomidae,34,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+5/18/2022,CTC Open Space,Nematoda,5,NA,FALSE,-,Predators,Roundworms
+5/18/2022,CTC Open Space,Red Chironomidae,8,10,FALSE,Diptera,Multiple,Midge/Chironomid
+5/18/2022,CTC Open Space,Baetis,12,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+5/18/2022,CTC Open Space,Dytiscidae,1,NA,FALSE,Coleoptera,Predators,Predacious diving beetles
+5/18/2022,CTC Open Space,Crangonyx,50,4,FALSE,Amphipoda,Gathering Collectors,Scud
+5/18/2022,CTC Open Space,Hyalella,8,8,FALSE,Amphipoda,Scrapers,Scud
+6/22/2022,Greenbelt Plateau,Annelida,4,NA,FALSE,Annelida,Detritivore,Segmented worms
+6/22/2022,Greenbelt Plateau,Nixe,1,4,TRUE,Ephemeroptera,Scrapers,Flat-headed mayflies
+6/22/2022,Greenbelt Plateau,Baetis,57,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+6/22/2022,Greenbelt Plateau,Simuliidae,580,6,FALSE,Diptera,Filtering Collectors,Blackfly
+6/22/2022,Greenbelt Plateau,Chloroperlidae,2,1,TRUE,Plecoptera,Predators,Green Stoneflies
+6/22/2022,Greenbelt Plateau,Crangonyx,14,4,FALSE,Amphipoda,Gathering Collectors,Scud
+6/22/2022,Greenbelt Plateau,Hyalella,2,8,FALSE,Amphipoda,Scrapers,Scud
+6/22/2022,Greenbelt Plateau,White Chironomidae,84,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+6/22/2022,Greenbelt Plateau,Nematoda,1,NA,FALSE,-,Predators,Roundworms
+6/22/2022,Highway 36,White Chironomidae,21,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+6/22/2022,Highway 36,White Chironomidae,3,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+6/22/2022,Highway 36,Baetis,7,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+6/22/2022,Highway 36,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+6/22/2022,Highway 36,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+6/22/2022,Highway 36,Hydropsychidae,3,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+6/22/2022,Highway 36,Annelida,5,NA,FALSE,Annelida,Detritivore,Segmented worms
+6/22/2022,Highway 36,Trombidiformes,1,NA,FALSE,Trombidiformes,Predators,Water Mites
+6/22/2022,Highway 36,Nematoda,5,NA,FALSE,-,Predators,Roundworms
+6/22/2022,Highway 36,Arhynchobdellida,1,4,FALSE,Arhynchobdellida,Predators,Leech
+6/22/2022,Highway 36,Crangonyx,23,4,FALSE,Amphipoda,Gathering Collectors,Scud
+6/22/2022,Highway 36,Hyalella,3,8,FALSE,Amphipoda,Scrapers,Scud
+6/22/2022,CTC Open Space,Gastropoda,4,7,FALSE,-,Scrapers,Snail
+6/22/2022,CTC Open Space,Red Chironomidae,3,10,FALSE,Diptera,Multiple,Midge/Chironomid
+6/22/2022,CTC Open Space,White Chironomidae,37,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+6/22/2022,CTC Open Space,Annelida,22,NA,FALSE,Annelida,Detritivore,Segmented worms
+6/22/2022,CTC Open Space,Tricladida,18,4,FALSE,Tricladida,Collectors,Flatworms
+6/22/2022,CTC Open Space,Nematoda,3,NA,FALSE,-,Predators,Roundworms
+6/22/2022,CTC Open Space,Trombidiformes,3,NA,FALSE,Trombidiformes,Predators,Water Mites
+6/22/2022,CTC Open Space,Crangonyx,20,4,FALSE,Amphipoda,Gathering Collectors,Scud
+6/22/2022,CTC Open Space,Hyalella,4,8,FALSE,Amphipoda,Scrapers,Scud
+6/22/2022,CTC Open Space,Baetidae,51,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+6/22/2022,CTC Open Space,Tricorythodes,65,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+6/22/2022,CTC Open Space,Calopterygidae,3,5,FALSE,Odonata,Predators,Broad-winged damselfly
+6/22/2022,CTC Open Space,Arhynchobdellida,1,4,FALSE,Arhynchobdellida,Predators,Leech
+6/22/2022,CTC Open Space,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+7/25/2022,Greenbelt Plateau,Paraleptophlebia,1,1,TRUE,Ephemeroptera,Detrivores,Prong-gilled mayflies
+7/25/2022,Greenbelt Plateau,Crangonyx,22,4,FALSE,Amphipoda,Gathering Collectors,Scud
+7/25/2022,Greenbelt Plateau,Hyalella,72,8,FALSE,Amphipoda,Scrapers,Scud
+7/25/2022,Greenbelt Plateau,Baetis,25,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+7/25/2022,Superior Associates,Baetis,17,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+7/25/2022,CTC Open Space,Baetis,46,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+7/25/2022,CTC Open Space,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+7/25/2022,CTC Open Space,Hydropsychidae,2,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+7/25/2022,CTC Open Space,Trombidiformes,1,NA,FALSE,Trombidiformes,Predators,Water Mites
+7/25/2022,CTC Open Space,Crangonyx,13,4,FALSE,Amphipoda,Gathering Collectors,Scud
+7/25/2022,CTC Open Space,Hyalella,7,8,FALSE,Amphipoda,Scrapers,Scud
+7/25/2022,Highway 36,Baetis,16,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+7/25/2022,Highway 36,White Chironomidae,1,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+7/25/2022,Highway 36,Crangonyx,1,4,FALSE,Amphipoda,Gathering Collectors,Scud
+7/25/2022,Highway 36,Hyalella,2,8,FALSE,Amphipoda,Scrapers,Scud
+7/25/2022,Superior Associates,Hyalella,1,8,FALSE,Amphipoda,Scrapers,Scud
+7/25/2022,CTC Open Space,Hydropsychidae,27,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+7/25/2022,CTC Open Space,Tricorythodes,5,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+7/25/2022,Highway 36,Tricorythodes,4,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+7/25/2022,Highway 36,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+7/25/2022,Greenbelt Plateau,Dytiscidae,1,NA,FALSE,Coleoptera,Predators,Predacious diving beetles
+7/25/2022,CTC Open Space,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+7/25/2022,Greenbelt Plateau,Hydropsychidae,5,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+7/25/2022,Greenbelt Plateau,Caecidotea,8,8,FALSE,Isopoda,Gathering Collectors,Waterslater
+7/25/2022,CTC Open Space,Dytiscidae,4,NA,FALSE,Coleoptera,Predators,Predacious diving beetles
+7/25/2022,CTC Open Space,Gastropoda,5,7,FALSE,-,Scrapers,Snail
+7/25/2022,Greenbelt Plateau,Decapoda,17,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+7/25/2022,Greenbelt Plateau,Nematoda,1,NA,FALSE,-,Predators,Roundworms
+7/25/2022,Greenbelt Plateau,Annelida,11,NA,FALSE,Annelida,Detritivore,Segmented worms
+7/25/2022,Greenbelt Plateau,White Chironomidae,5,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+7/25/2022,Greenbelt Plateau,Red Chironomidae,2,10,FALSE,Diptera,Multiple,Midge/Chironomid
+7/25/2022,Superior Associates,Simuliidae,23,6,FALSE,Diptera,Filtering Collectors,Blackfly
+7/25/2022,Superior Associates,White Chironomidae,6,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+7/25/2022,Superior Associates,Gastropoda,1,7,FALSE,-,Scrapers,Snail
+7/25/2022,Highway 36,Red Chironomidae,2,10,FALSE,Diptera,Multiple,Midge/Chironomid
+7/25/2022,Highway 36,Simuliidae,16,6,FALSE,Diptera,Filtering Collectors,Blackfly
+7/25/2022,Highway 36,White Chironomidae,15,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+7/25/2022,Highway 36,Decapoda,1,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+7/25/2022,CTC Open Space,Annelida,22,NA,FALSE,Annelida,Detritivore,Segmented worms
+7/25/2022,CTC Open Space,Tricladida,59,4,FALSE,Tricladida,Collectors,Flatworms
+7/25/2022,CTC Open Space,Arhynchobdellida,1,4,FALSE,Arhynchobdellida,Predators,Leech
+7/25/2022,CTC Open Space,Nematoda,3,NA,FALSE,-,Predators,Roundworms
+7/25/2022,CTC Open Space,Simuliidae,3,6,FALSE,Diptera,Filtering Collectors,Blackfly
+7/25/2022,CTC Open Space,White Chironomidae,2,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+7/25/2022,CTC Open Space,Decapoda,2,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+8/18/2022,Superior Associates,Nematoda,3,NA,FALSE,-,Predators,Roundworms
+8/18/2022,Superior Associates,White Chironomidae,2,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+8/18/2022,Highway 36,Decapoda,1,8,FALSE,Decapoda>Pleocyemata,Predators,Crawfish/Crayfish
+8/18/2022,Highway 36,Arhynchobdellida,1,4,FALSE,Arhynchobdellida,Predators,Leech
+8/18/2022,Highway 36,White Chironomidae,13,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+8/18/2022,Highway 36,Red Chironomidae,1,10,FALSE,Diptera,Multiple,Midge/Chironomid
+8/18/2022,Highway 36,Trombidiformes,1,NA,FALSE,Trombidiformes,Predators,Water Mites
+8/18/2022,Highway 36,Annelida,5,NA,FALSE,Annelida,Detritivore,Segmented worms
+8/18/2022,Highway 36,Nematoda,1,NA,FALSE,-,Predators,Roundworms
+8/18/2022,CTC Open Space,Crangonyx,8,4,FALSE,Amphipoda,Gathering Collectors,Scud
+8/18/2022,CTC Open Space,Baetis,84,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+8/18/2022,CTC Open Space,Tricorythodes,17,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+8/18/2022,CTC Open Space,Trombidiformes,5,NA,FALSE,Trombidiformes,Predators,Water Mites
+8/18/2022,CTC Open Space,Diptera,1,6,FALSE,Diptera,-,Midge
+8/18/2022,CTC Open Space,Hemerodromia,1,6,FALSE,Diptera,Predators,Dagger Flies
+8/18/2022,CTC Open Space,Hydropsychidae,54,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+8/18/2022,CTC Open Space,Red Chironomidae,1,10,FALSE,Diptera,Multiple,Midge/Chironomid
+8/18/2022,CTC Open Space,Annelida,17,NA,FALSE,Annelida,Detritivore,Segmented worms
+8/18/2022,CTC Open Space,Tricladida,16,4,FALSE,Tricladida,Collectors,Flatworms
+8/18/2022,CTC Open Space,Nematoda,3,NA,FALSE,-,Predators,Roundworms
+8/18/2022,CTC Open Space,White Chironomidae,15,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+8/18/2022,Highway 36,Baetis,6,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+8/18/2022,Highway 36,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+8/18/2022,Highway 36,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+8/18/2022,Highway 36,Hydropsychidae,15,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+8/18/2022,Highway 36,White Chironomidae,9,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+9/30/2022,Superior Associates,Heptageniidae,1,4,TRUE,Ephemeroptera,Scrapers,Flat-headed mayflies
+9/30/2022,Superior Associates,Baetis,1,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+9/30/2022,Superior Associates,Baetis,30,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+9/30/2022,Superior Associates,Dytiscidae,1,NA,FALSE,Coleoptera,Predators,Predacious diving beetles
+9/30/2022,Highway 36,Baetis,37,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+9/30/2022,Highway 36,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+9/30/2022,Highway 36,Hydropsychidae,2,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+9/30/2022,Highway 36,Crangonyx,2,4,FALSE,Amphipoda,Gathering Collectors,Scud
+9/30/2022,Highway 36,Hyalella,3,8,FALSE,Amphipoda,Scrapers,Scud
+9/30/2022,Highway 36,Hydropsychidae,9,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+9/30/2022,Highway 36,Hydropsychidae,11,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+9/30/2022,CTC Open Space,Coenagrionidae,5,9,FALSE,Odonata,Predators,Narrow-winged damselfly
+9/30/2022,CTC Open Space,Hyalella,2,8,FALSE,Amphipoda,Scrapers,Scud
+9/30/2022,CTC Open Space,Crangonyx,29,4,FALSE,Amphipoda,Gathering Collectors,Scud
+9/30/2022,CTC Open Space,Hydropsychidae,86,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+9/30/2022,CTC Open Space,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+9/30/2022,Superior Associates,Annelida,5,NA,FALSE,Annelida,Detritivore,Segmented worms
+9/30/2022,Superior Associates,Simuliidae,30,6,FALSE,Diptera,Filtering Collectors,Blackfly
+9/30/2022,Superior Associates,White Chironomidae,34,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+9/30/2022,Highway 36,White Chironomidae,20,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+9/30/2022,Highway 36,Simuliidae,6,6,FALSE,Diptera,Filtering Collectors,Blackfly
+9/30/2022,CTC Open Space,White Chironomidae,4,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+9/30/2022,CTC Open Space,Simuliidae,29,6,FALSE,Diptera,Filtering Collectors,Blackfly
+9/30/2022,CTC Open Space,Tricladida,37,4,FALSE,Tricladida,Collectors,Flatworms
+9/30/2022,CTC Open Space,Annelida,26,NA,FALSE,Annelida,Detritivore,Segmented worms
+9/30/2022,CTC Open Space,Trombidiformes,2,NA,FALSE,Trombidiformes,Predators,Water Mites
+9/30/2022,CTC Open Space,Red Chironomidae,1,10,FALSE,Diptera,Multiple,Midge/Chironomid
+9/30/2022,CTC Open Space,Baetis,2,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+9/30/2022,CTC Open Space,Baetidae,153,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayflies
+9/30/2022,CTC Open Space,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+9/30/2022,Highway 36,Diptera,3,6,FALSE,Diptera,-,Midge
+9/30/2022,CTC Open Space,Diptera,5,6,FALSE,Diptera,-,Midge
+9/30/2022,CTC Open Space,Simuliidae,1,6,FALSE,Diptera,Filtering Collectors,Blackfly
+10/30/2022,Highway 36,Crangonyx,21,4,FALSE,Amphipoda,Gathering Collectors,Scud
+10/30/2022,Highway 36,Hyalella,9,8,FALSE,Amphipoda,Scrapers,Scud
+10/30/2022,Highway 36,Baetis,14,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+10/30/2022,Highway 36,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+10/30/2022,Highway 36,Baetidae,1,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayflies
+10/30/2022,CTC Open Space,Calopterygidae,2,5,FALSE,Odonata,Predators,Broad-winged damselfly
+10/30/2022,CTC Open Space,Coenagrionidae,1,9,FALSE,Odonata,Predators,Narrow-winged damselfly
+10/30/2022,CTC Open Space,Baetis,1,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+10/30/2022,Highway 36,Ceratopogonidae,1,6,FALSE,Diptera,Predators,Biting Midge
+10/30/2022,CTC Open Space,Crangonyx,7,4,FALSE,Amphipoda,Gathering Collectors,Scud
+10/30/2022,CTC Open Space,Hyalella,3,8,FALSE,Amphipoda,Scrapers,Scud
+10/30/2022,CTC Open Space,Baetis,99,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+10/30/2022,CTC Open Space,Oligochaeta,2,NA,FALSE,-,Detrivores,Earth Worms
+10/30/2022,Highway 36,Hydropsychidae,25,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+10/30/2022,Highway 36,Oligochaeta,5,NA,FALSE,-,Detrivores,Earth Worms
+10/30/2022,CTC Open Space,Hydropsychidae,24,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+10/30/2022,Highway 36,Diptera,4,6,FALSE,Diptera,-,Midge
+10/30/2022,Highway 36,Annelida,6,NA,FALSE,Annelida,Detritivore,Segmented worms
+10/30/2022,Highway 36,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+10/30/2022,CTC Open Space,Simuliidae,30,6,FALSE,Diptera,Filtering Collectors,Blackfly
+10/30/2022,CTC Open Space,Tricladida,13,4,FALSE,Tricladida,Collectors,Flatworms
+10/30/2022,CTC Open Space,White Chironomidae,29,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+10/30/2022,CTC Open Space,Red Chironomidae,1,10,FALSE,Diptera,Multiple,Midge/Chironomid
+10/30/2022,CTC Open Space,Arhynchobdellida,1,4,FALSE,Arhynchobdellida,Predators,Leech
+10/30/2022,CTC Open Space,Annelida,8,NA,FALSE,Annelida,Detritivore,Segmented worms
+10/30/2022,CTC Open Space,Tricorythodes,31,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+11/28/2022,Highway 36,Hyalella,2,8,FALSE,Amphipoda,Scrapers,Scud
+11/28/2022,Highway 36,Crangonyx,4,4,FALSE,Amphipoda,Gathering Collectors,Scud
+11/28/2022,Highway 36,Baetis,2,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+11/28/2022,Highway 36,Hydropsychidae,1,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+11/28/2022,CTC Open Space,Baetis,71,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+11/28/2022,CTC Open Space,Tricorythodes,1,5,TRUE,Ephemeroptera,Gathering Collectors,Little stout crawler mayfly
+11/28/2022,CTC Open Space,Baetis,2,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+11/28/2022,CTC Open Space,Baetidae,1,5,TRUE,Ephemeroptera,Scrapers,Small minnow mayfly
+11/28/2022,CTC Open Space,Crangonyx,12,4,FALSE,Amphipoda,Gathering Collectors,Scud
+11/28/2022,CTC Open Space,Hyalella,2,8,FALSE,Amphipoda,Scrapers,Scud
+11/28/2022,CTC Open Space,Hydropsychidae,2,4,TRUE,Trichoptera,Filtering Collectors,Net spinning caddisflies
+11/28/2022,Highway 36,White Chironomidae,10,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+11/28/2022,CTC Open Space,White Chironomidae,27,6,FALSE,Diptera,Multiple,Non-biting midge/chironomid
+11/28/2022,CTC Open Space,Simuliidae,81,6,FALSE,Diptera,Filtering Collectors,Blackfly
+11/28/2022,CTC Open Space,Tricladida,10,4,FALSE,Tricladida,Collectors,Flatworms
+11/28/2022,CTC Open Space,Tipulidae,1,7,FALSE,Diptera,Shredders,Crane fly
+11/28/2022,CTC Open Space,Annelida,2,NA,FALSE,Annelida,Detritivore,Segmented worms
